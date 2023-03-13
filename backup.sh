@@ -1,9 +1,10 @@
 #!/bin/bash
-# backup.sh - Make an encryption backup of your files.
-# This POSIX compliant script uses rsync and openssl
-# to make a backup of your files. To specify the source
-# directories to backup, create a text file with the following
-# syntax:
+# backup.sh - Backup and encrypt your files.
+# backup.sh is a POSIX compliant, modular and lightweight
+# backup utility to save and encrypt your files.
+#
+# To specify the source directories to backup,
+# create a text file with the following syntax:
 #
 # <LABEL>=<PATH>
 #
@@ -118,7 +119,7 @@ helper() {
     CLI_NAME="$1"
 
     cat <<EOF
-backup.sh - Make an encryption backup of your files.
+backup.sh - POSIX compliant, modular and lightweight backup utility.
 
 Syntax: $CLI_NAME [-b|-e|-h]
 options:
