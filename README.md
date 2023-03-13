@@ -91,6 +91,17 @@ Elapsed time: 10 seconds.
 
 After that, you will find the final backup archive in `/home/john/backup-<HOSTNAME>-<YYYMMDD>.tar.gz.enc`.
 
+You can also use `backup.sh` from a crontab rule:
+```sh
+$> sudo crontab -e
+30 03 * * 6 EKEY=$(cat /home/john/.ekey) /usr/local/bin/backup.sh -b /usr/local/etc/sources.bk john $EKEY
+
+```
+
+This will automatically run `backup.sh` every Saturday morning at 03:30 AM. In the example above, the encryption
+key is stored in a local file(with fixed permissions) to avoid password leaking in crontab logs. You can also
+adopt this practice while using the `--extract` option to avoid password leaking in shell history.
+
 ### Archive extraction
 `backup.sh` can also extract the encrypted backup archive using the following syntax:
 
