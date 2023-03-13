@@ -125,7 +125,7 @@ backup-ssh-<YYYYMMDD>
 ```
 
 
-## How does backup.sh work
+## How does `backup.sh` work
 TODO: explain backend(rsync) parameters.
 ### Backup flow
 Graph with:
