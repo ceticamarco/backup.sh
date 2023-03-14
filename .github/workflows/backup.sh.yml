@@ -19,4 +19,4 @@ jobs:
           shellcheck tests.sh
       - name: Run unit tests
         run: |
-          ./tests.sh I_HAVE_READ_THE_HELPER
+          sudo ./tests.sh I_HAVE_READ_THE_HELPER
