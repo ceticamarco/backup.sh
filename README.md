@@ -115,7 +115,7 @@ Where `<ENCRYPTED_ARCHIVE>` is the encrypted backup and `<ARCHIVE_PASSWORD>` is 
 For instance:
 
 ```sh
-$> ./backup.sh -extract backup-<hostname>-<YYYMMDD>.tar.gz.enc badpw1234
+$> ./backup.sh --extract backup-<hostname>-<YYYMMDD>.tar.gz.enc badpw1234
 ```
 
 This will create a new folder called `backup.sh.tmp` in your local directory. Be sure to rename any directory
