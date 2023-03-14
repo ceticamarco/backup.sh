@@ -1,4 +1,4 @@
-# backup.sh
+# backup.sh [![backup.sh](https://github.com/ice-bit/backup.sh/actions/workflows/backup.sh.yml/badge.svg)](https://github.com/ice-bit/backup.sh/actions/workflows/backup.sh.yml)
 `backup.sh` is a POSIX compliant, modular and lightweight backup utility to save and encrypt your files.
 This tool is intended to be used on small scale UNIX environment such as VPS, small servers and 
 workstations. `backup.sh` uses [rsync](https://linux.die.net/man/1/rsync), [tar](https://linux.die.net/man/1/tar)
