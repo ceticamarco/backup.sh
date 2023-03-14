@@ -93,9 +93,9 @@ make_backup() {
 
     # Compress and encrypt backup directory
     echo "Compressing and encrypting backup..."
-    tar -cz -C $BACKUP_SH_OUTPATH $BACKUP_SH_FOLDER | \
+    tar -cz -C "$BACKUP_SH_OUTPATH" $BACKUP_SH_FOLDER | \
         openssl enc -aes-256-cbc -md sha512 -pbkdf2 -iter 100000 -salt -k "$BACKUP_SH_PASS" \
-        > $BACKUP_SH_OUTPATH/"backup-$(uname -n)-$BACKUP_SH_DATE.tar.gz.enc"
+        > "$BACKUP_SH_OUTPATH"/"backup-$(uname -n)-$BACKUP_SH_DATE.tar.gz.enc"
 
     # Remove temporary files
     rm -rf "$BACKUP_SH_OUTPUT"
