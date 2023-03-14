@@ -11,7 +11,7 @@ Alternatively, you can install the script, the default sources file and the man 
 $> sudo make install
 ```
 This will copy `backup.sh` into `/usr/local/bin/backup.sh`, `backup_sources.bk` into `/usr/local/etc/backup_sources.bk` and
-`backup.sh.1` into `/usr/local/share/man/man1`. To uninstall the program along with the sample _sources file_ and the manual page,
+`backup.sh.1` into `/usr/local/share/man/man1/backup.sh.1`. To uninstall the program along with the sample _sources file_ and the manual page,
 you can issue `sudo make uninstall`.
 
 At this point you still need to install the following dependencies:
@@ -31,7 +31,7 @@ options:
 -h|--help                       Show this helper.
 ```
 
-As you can see, `backup.sh` supports two options: **backup creation** and **archive extraction**, the former requires
+As you can see, `backup.sh` supports two options: **backup creation** and **backup extraction**, the former requires
 root permissions, while the latter does not. Let us see them in details.
 
 ### Backup creation
@@ -103,7 +103,7 @@ This will automatically run `backup.sh` every Saturday morning at 03:30 AM. In t
 key is stored in a local file(with fixed permissions) to avoid password leaking in crontab logs. You can also
 adopt this practice while using the `--extract` option to avoid password leaking in shell history.
 
-### Archive extraction
+### Backup extraction
 `backup.sh` can also extract the encrypted backup archive using the following syntax:
 
 ```sh
@@ -135,14 +135,14 @@ $> rsync -aPhrq --delete
 
 That is:
 
-- `-a`: **archive mode**, rsync copies files recursively while preserving as much metadata
+- `-a`: **archive mode**: rsync copies files recursively while preserving as much metadata
 as possible;  
 - `-P`: **progress/partial**, this allows rsync to resume interrupted transfers and to 
 shows progress information;  
-- `-h`: **human readable output**, rsync shows output numbers in a more readable way;  
-- `-r`: **recursive mode**: which forces rsync to copy directories and their content;  
-- `-q`: **quiet mode**: which reduces the amount of information rsync produces;  
-- `--delete`: **delete mode**: which forces rsync to delete any extraneous files at the
+- `-h`: **human readable output**: rsync shows output numbers in a more readable way;  
+- `-r`: **recursive mode**: forces rsync to copy directories and their content;  
+- `-q`: **quiet mode**: reduces the amount of information rsync produces;  
+- `--delete`: **delete mode**: forces rsync to delete any extraneous files at the
 destination dir.
 
 
