@@ -11,7 +11,8 @@ Alternatively, you can install the script, the default sources file and the man 
 $> sudo make install
 ```
 This will copy `backup.sh` into `/usr/local/bin/backup.sh`, `backup_sources.bk` into `/usr/local/etc/backup_sources.bk` and
-`backup.sh.1` into `/usr/local/share/man/man1`.
+`backup.sh.1` into `/usr/local/share/man/man1`. To uninstall the program along with the sample _sources file_ and the manual page,
+you can issue `sudo make uninstall`.
 
 At this point you still need to install the following dependencies:
 - `rsync`
@@ -164,6 +165,17 @@ function;
 - `-salt`: **enable salting**: this option tells openssl to add a random salt to the key derivation process in order to 
 avoid rainbow table based attacks.
 
-
 ## Unit tests
+`backup.sh` provides some unit tests inside the `tests.sh` script. This script generates some dummy files inside the following
+directories:
+- /var/log
+- /var/www
+- /etc/nginx
+- /etc/ssh
+
+For this reason, this script should **NOT** be used in non-testing environments. To run all tests, issue the following command:
+```sh
+$> sudo ./tests.sh I_HAVE_READ_THE_HELPER
+```
+
 ## License
