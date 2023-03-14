@@ -49,7 +49,7 @@ make_backup() {
     BACKUP_SH_SOURCES_PATH="$1"
     BACKUP_SH_OUTPATH="$2"
     BACKUP_SH_PASS="$3"
-    BACKUP_SH_COMMAND="rsync -aPhvrq --delete"
+    BACKUP_SH_COMMAND="rsync -aPhrq --delete"
     BACKUP_SH_DATE="$(date +'%Y%m%d')"
     BACKUP_SH_FOLDER="backup.sh.tmp"
     BACKUP_SH_OUTPUT="$BACKUP_SH_OUTPATH/$BACKUP_SH_FOLDER"

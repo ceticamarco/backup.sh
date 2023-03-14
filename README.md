@@ -125,15 +125,45 @@ backup-ssh-<YYYYMMDD>
 ```
 
 
-## How does `backup.sh` work
-TODO: explain backend(rsync) parameters.
-### Backup flow
-Graph with:
-1. loop through sources;
-2. Copy each source in tmp dir;
-3. Compress the archive and encrypt it.
-### Encryption
-TODO: show `file` output of the backup
+## How does `backup.sh` work?
+`backup.sh` uses **rsync** to copy the files, **tar** to compress the backup and **openssl**
+to encrypt it. By default, rsync is being used with the following parameters:
+```sh
+$> rsync -aPhrq --delete
+```
+
+That is:
+
+- `-a`: **archive mode**, rsync copies files recursively while preserving as much metadata
+as possible;  
+- `-P`: **progress/partial**, this allows rsync to resume interrupted transfers and to 
+shows progress information;  
+- `-h`: **human readable output**, rsync shows output numbers in a more readable way;  
+- `-r`: **recursive mode**: which forces rsync to copy directories and their content;  
+- `-q`: **quiet mode**: which reduces the amount of information rsync produces;  
+- `--delete`: **delete mode**: which forces rsync to delete any extraneous files at the
+destination dir.
+
+
+After that the backup folder is being encrypred using openssl. By default, it is used
+with the following parameters:
+```sh
+$> openssl enc -aes-256-cbc -md sha512 -pbkdf2 -iter 100000 -salt -k "$PASSWORD" > file.tar.gz.enc
+```
+
+This command encrypts the backup using the AES-256-CBC symmetric encryption algorithm with a 256bit
+key. Here is what each option means:
+- `enc`: **encrypt mode**: tell openssl to use encryption functionality;  
+- `-aes-256-cbc`: **encryption algorithm**: this option tells openssl which encryption algorithm to use;  
+- `-md sh512`: **hashing algorithm**: this option tells openssl which hashing algorithm to use for key derivation,
+i.e., converting the text-based password(`$PASSWORD`) into an encryption key;  
+- `-pbkdf2`: **key deriving algorithm**: this option tells openssl which key deriving algorithm to use. In this case
+we use the _password-based key derivation function 2_ algorithm;  
+- `-iter 100000`: **number of iterations**: this options tells openssl the number of iteration to use for the key derivation
+function;  
+- `-salt`: **enable salting**: this option tells openssl to add a random salt to the key derivation process in order to 
+avoid rainbow table based attacks.
+
 
 ## Unit tests
 ## License
