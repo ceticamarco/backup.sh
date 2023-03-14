@@ -1,5 +1,4 @@
 #!/bin/bash
-# backup.sh - Backup and encrypt your files.
 # backup.sh is a POSIX compliant, modular and lightweight
 # backup utility to save and encrypt your files.
 #
@@ -14,7 +13,7 @@
 #   logs=/var/log/
 #
 # After that you can launch the script with(sample usage):
-#   sudo ./backup.sh --backup sources.bk john badpw1234
+#   sudo ./backup.sh --backup sources.bk /home/john badpw1234
 #
 # This will create an encrypted tar archive(password: 'badpw1234')
 # in '/home/john/backup-<hostname>-<YYYMMDD>.tar.gz.enc' containing
@@ -48,12 +47,12 @@ fi
 
 make_backup() {
     BACKUP_SH_SOURCES_PATH="$1"
-    BACKUP_SH_USER="$2"
+    BACKUP_SH_OUTPATH="$2"
     BACKUP_SH_PASS="$3"
     BACKUP_SH_COMMAND="rsync -aPhvrq --delete"
     BACKUP_SH_DATE="$(date +'%Y%m%d')"
     BACKUP_SH_FOLDER="backup.sh.tmp"
-    BACKUP_SH_OUTPUT="/home/$BACKUP_SH_USER/$BACKUP_SH_FOLDER"
+    BACKUP_SH_OUTPUT="$BACKUP_SH_OUTPATH/$BACKUP_SH_FOLDER"
     BACKUP_SH_START_TIME="$(date +%s)"
     declare -A BACKUP_SH_SOURCES
 
@@ -94,9 +93,9 @@ make_backup() {
 
     # Compress and encrypt backup directory
     echo "Compressing and encrypting backup..."
-    tar -cz -C /home/"$BACKUP_SH_USER" $BACKUP_SH_FOLDER | \
+    tar -cz -C $BACKUP_SH_OUTPATH $BACKUP_SH_FOLDER | \
         openssl enc -aes-256-cbc -md sha512 -pbkdf2 -iter 100000 -salt -k "$BACKUP_SH_PASS" \
-        > /home/"$BACKUP_SH_USER"/"backup-$(uname -n)-$BACKUP_SH_DATE.tar.gz.enc"
+        > $BACKUP_SH_OUTPATH/"backup-$(uname -n)-$BACKUP_SH_DATE.tar.gz.enc"
 
     # Remove temporary files
     rm -rf "$BACKUP_SH_OUTPUT"
@@ -123,9 +122,12 @@ backup.sh - POSIX compliant, modular and lightweight backup utility.
 
 Syntax: $CLI_NAME [-b|-e|-h]
 options:
--b|--backup  SOURCES USER PASS  Backup folders from SOURCES file.
+-b|--backup  SOURCES DEST PASS  Backup folders from SOURCES file.
 -e|--extract ARCHIVE PASS       Extract ARCHIVE using PASS.
 -h|--help                       Show this helper.
+
+General help with the software: https://github.com/ice-bit/backup.sh
+Report bugs to: Marco Cetica(<email@marcocetica.com>)
 EOF
 }
 
@@ -141,15 +143,15 @@ while [ $# -gt 0 ]; do
     case $1 in
         -b|--backup)
             BACKUP_SH_SOURCES_PATH="$2"
-            BACKUP_SH_USER="$3"
+            BACKUP_SH_OUTPATH="$3"
             BACKUP_SH_PASSWORD="$4"
 
-            if [ -z "$BACKUP_SH_SOURCES_PATH" ] || [ -z "$BACKUP_SH_USER" ] || [ -z "$BACKUP_SH_PASSWORD" ]; then
-                echo "Please, specify a source file, a user and a password."
+            if [ -z "$BACKUP_SH_SOURCES_PATH" ] || [ -z "$BACKUP_SH_OUTPATH" ] || [ -z "$BACKUP_SH_PASSWORD" ]; then
+                echo "Please, specify a source file, an output path and a password."
                 echo "For more informatio, try --help"
                 exit 1
             fi
-            make_backup "$BACKUP_SH_SOURCES_PATH" "$BACKUP_SH_USER" "$BACKUP_SH_PASSWORD"
+            make_backup "$BACKUP_SH_SOURCES_PATH" "$BACKUP_SH_OUTPATH" "$BACKUP_SH_PASSWORD"
             exit 0
             ;;
         -e|--extract)

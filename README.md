@@ -13,7 +13,7 @@ $> sudo make install
 This will copy `backup.sh` into `/usr/local/bin/backup.sh`, `backup_sources.bk` into `/usr/local/etc/backup_sources.bk` and
 `backup.sh.1` into `/usr/local/share/man/man1`.
 
-At this point you still need to install the dependencies:
+At this point you still need to install the following dependencies:
 - `rsync`
 - `tar`
 - `openssl`
@@ -25,7 +25,7 @@ backup.sh - POSIX compliant, modular and lightweight backup utility.
 
 Syntax: ./backup.sh [-b|-e|-h]
 options:
--b|--backup  SOURCES USER PASS  Backup folders from SOURCES file.
+-b|--backup  SOURCES DEST PASS  Backup folders from SOURCES file.
 -e|--extract ARCHIVE PASS       Extract ARCHIVE using PASS.
 -h|--help                       Show this helper.
 ```
@@ -34,7 +34,7 @@ As you can see, `backup.sh` supports two options: **backup creation** and **arch
 root permissions, while the latter does not. Let us see them in details.
 
 ### Backup creation
-To specify the directories to backup, `backup.sh` uses an associative array called
+To specify the directories to backup, `backup.sh` uses an associative array
 defined in a text file(called _sources file_) with the following syntax:
 
 ```text
@@ -42,7 +42,7 @@ defined in a text file(called _sources file_) with the following syntax:
 ```
 
 Where `<LABEL>` is the name of the backup and `<PATH>` is its path. For example,
-if you want you back up `/etc/nginx` and `/etc/ssh`, add the following entries to the _sources file_:
+if you want to back up `/etc/nginx` and `/etc/ssh`, add the following entries to the _sources file_:
 
 ```text
 nginx=/etc/nginx/
@@ -70,15 +70,15 @@ You can find a sample _sources file_ at `backup_sources.bk`(or at `/usr/local/et
 
 After having defined the _sources file_, you can invoke `backup.sh` using the following syntax:
 ```sh
-$> sudo ./backup.sh --backup <SOURCES_FILE> <USER> <ENCRYPTION_PASSWORD>
+$> sudo ./backup.sh --backup <SOURCES_FILE> <DEST> <ENCRYPTION_PASSWORD>
 ```
 
-Where `<SOURCES_FILE>` is the _sources file_, `<USER>` is the home directory where you want the final backup
-and `<ENCRYPTION_PASSWORD>` is the password to encrypt the compressed archive.
+Where `<SOURCES_FILE>` is the _sources file_, `<DEST>` is the absolute path of the output of the backup 
+**without trailing slashes** and `<ENCRYPTION_PASSWORD>` is the password to encrypt the compressed archive.
 
 In the previous example, this would be:
 ```sh
-$> sudo ./backup.sh --backup sources.bk john badpw1234
+$> sudo ./backup.sh --backup sources.bk /home/john badpw1234
 ```
 
 The backup utility will begin to copy the files defined in the _sources file_:
@@ -94,7 +94,7 @@ After that, you will find the final backup archive in `/home/john/backup-<HOSTNA
 You can also use `backup.sh` from a crontab rule:
 ```sh
 $> sudo crontab -e
-30 03 * * 6 EKEY=$(cat /home/john/.ekey) /usr/local/bin/backup.sh -b /usr/local/etc/sources.bk john $EKEY
+30 03 * * 6 EKEY=$(cat /home/john/.ekey) /usr/local/bin/backup.sh -b /usr/local/etc/sources.bk /home/john $EKEY
 
 ```
 
@@ -109,7 +109,7 @@ adopt this practice while using the `--extract` option to avoid password leaking
 $> ./backup.sh --extract <ENCRYPTED_ARCHIVE> <ARCHIVE_PASSWORD>
 ```
 
-where `<ENCRYPTED_ARCHIVE>` is the encrypted backup and `<ARCHIVE_PASSWORD>` is the backup password.
+Where `<ENCRYPTED_ARCHIVE>` is the encrypted backup and `<ARCHIVE_PASSWORD>` is the backup password.
 
 For instance:
 
