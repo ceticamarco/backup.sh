@@ -10,7 +10,7 @@ Alternatively, you can install the script, the default sources file and the man 
 ```sh
 $> sudo make install
 ```
-This will copy `backup.sh` into `/usr/local/bin/backup.sh`, `backup_sources.bk` into `/usr/local/etc/backup_sources.bk` and
+This will copy `backup.sh` into `/usr/local/bin/backup.sh`, `sources.bk` into `/usr/local/etc/sources.bk` and
 `backup.sh.1` into `/usr/local/share/man/man1/backup.sh.1`. To uninstall the program along with the sample _sources file_ and the manual page,
 you can issue `sudo make uninstall`.
 
@@ -67,7 +67,7 @@ the _sources file_, **should not** includes:
 - Empty lines;  
 - Comments.
 
-You can find a sample _sources file_ at `backup_sources.bk`(or at `/usr/local/etc/backup_sources.bk`).
+You can find a sample _sources file_ at `sources.bk`(or at `/usr/local/etc/sources.bk`).
 
 After having defined the _sources file_, you can invoke `backup.sh` using the following syntax:
 ```sh

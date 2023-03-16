@@ -63,7 +63,7 @@ In particular, the sources file, _should not_ includes:
     - Empty lines;  
     - Comments.  
 
-You can find a sample sources file at `backup_sources.bk`(or at `/usr/local/etc/backup_sources.bk`).
+You can find a sample sources file at `sources.bk`(or at `/usr/local/etc/sources.bk`).
 
 After having defined the sources file, you can invoke **backup.sh** using the following syntax:
 ```

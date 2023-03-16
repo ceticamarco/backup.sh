@@ -51,7 +51,7 @@ create_files() {
 }
 
 execute_backup() {
-    ./backup.sh -b backup_sources.bk "$PWD" badpw
+    ./backup.sh -b sources.bk "$PWD" badpw
 }
 
 extract_backup() {
