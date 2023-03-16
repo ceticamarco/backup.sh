@@ -7,7 +7,7 @@ install:
 	cp -R sources.bk /usr/local/etc/sources.bk
 	cp -R backup.sh.1 /usr/local/share/man/man1/backup.sh.1
 	chmod 755 /usr/local/bin/backup.sh
-	chmod 644 /usr/local/etc/backup_sources.bk
+	chmod 644 /usr/local/etc/sources.bk
 
 uninstall:
 	rm -rf /usr/local/bin/backup.sh
