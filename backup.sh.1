@@ -288,6 +288,18 @@ To do this, we can simply issue the following command:
 $> backup.sh --extract backup-af9a8e6bfe15-20230314.tar.gz.enc \[dq]Ax98f!\[dq]
 \f[R]
 .fi
+.IP "3." 3
+Extract the content of a backup made on 2018-04-25 using the password in
+\f[V]/home/john/.pw\f[R]
+.PP
+This example is very similar to the previous one, we just need to read
+the password from the text file:
+.IP
+.nf
+\f[C]
+$> backup.sh --extract backup-af9a8e6bfe15-20180425.tar.gz.enc \[dq]$(cat /home/john/.pw)\[dq]
+\f[R]
+.fi
 .SH AUTHORS
 .PP
 \f[B]backup.sh\f[R] was written by Marco Cetica on late 2018.
