@@ -198,6 +198,15 @@ To do this, we can simply issue the following command:
 $> backup.sh --extract backup-af9a8e6bfe15-20230314.tar.gz.enc "Ax98f!"
 ```
 
+
+3. Extract the content of a backup made on 2018-04-25 using the password in `/home/john/.pw`
+
+This example is very similar to the previous one, we just need to read the password from the text file:
+
+```
+$> backup.sh --extract backup-af9a8e6bfe15-20180425.tar.gz.enc "$(cat /home/john/.pw)"
+```
+
 # AUTHORS
 **backup.sh** was written by Marco Cetica on late 2018.
 
