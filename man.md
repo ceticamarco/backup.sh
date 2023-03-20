@@ -94,7 +94,7 @@ You can also use **backup.sh** from a crontab rule:
 
 ```
 $> sudo crontab -e
-30 03 * * 6 EKEY=$(cat /home/john/.ekey) /usr/local/bin/backup.sh -b /usr/local/etc/sources.bk /home/john $EKEY
+30 03 * * 6 EKEY=$(cat /home/john/.ekey) bash -c '/usr/local/bin/backup.sh -b /usr/local/etc/sources.bk /home/john $EKEY' > /dev/null 2>&1
 ```
 
 This will automatically run **backup.sh** every Saturday morning at 03:30 AM. 

@@ -109,9 +109,10 @@ extract_backup() {
     BACKUP_SH_ARCHIVE_PATH="$1"
     BACKUP_SH_ARCHIVE_PW="$2"
 
-    openssl enc -aes-256-cbc -md sha512 -pbkdf2 -iter 100000 -salt -d \
+    (openssl enc -aes-256-cbc -md sha512 -pbkdf2 -iter 100000 -salt -d \
         -in "$BACKUP_SH_ARCHIVE_PATH" \
-        -k  "$BACKUP_SH_ARCHIVE_PW" | tar xvz
+        -k  "$BACKUP_SH_ARCHIVE_PW" | tar xvz) > /dev/null 2>&1 \
+            || (echo "Unable to extract backup." && exit 1)
 }
 
 helper() {

@@ -144,7 +144,7 @@ You can also use \f[B]backup.sh\f[R] from a crontab rule:
 .nf
 \f[C]
 $> sudo crontab -e
-30 03 * * 6 EKEY=$(cat /home/john/.ekey) /usr/local/bin/backup.sh -b /usr/local/etc/sources.bk /home/john $EKEY
+30 03 * * 6 EKEY=$(cat /home/john/.ekey) bash -c \[aq]/usr/local/bin/backup.sh -b /usr/local/etc/sources.bk /home/john $EKEY\[aq] > /dev/null 2>&1
 \f[R]
 .fi
 .PP
