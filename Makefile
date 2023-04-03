@@ -2,7 +2,7 @@ all:
 	install
 
 install:
-	mkdir -p /usr/local/share/man/man1
+	mkdir -p /usr/local/share/man/man1 /usr/local/bin /usr/local/etc
 	cp -R backup.sh /usr/local/bin/backup.sh
 	cp -R sources.bk /usr/local/etc/sources.bk
 	cp -R backup.sh.1 /usr/local/share/man/man1/backup.sh.1
