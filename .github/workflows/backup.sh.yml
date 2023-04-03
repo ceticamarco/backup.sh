@@ -17,6 +17,9 @@ jobs:
         run: |
           shellcheck backup.sh
           shellcheck tests.sh
+      - name: Install using Makefile
+        run: |
+          make install
       - name: Run unit tests
         run: |
           sudo ./tests.sh I_HAVE_READ_THE_HELPER
