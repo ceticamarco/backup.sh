@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # backup.sh is a POSIX compliant, modular and lightweight
 # backup utility to save and encrypt your files.
 #

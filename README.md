@@ -1,8 +1,13 @@
 # backup.sh [![backup.sh](https://github.com/ice-bit/backup.sh/actions/workflows/backup.sh.yml/badge.svg)](https://github.com/ice-bit/backup.sh/actions/workflows/backup.sh.yml)
 `backup.sh` is a POSIX compliant, modular and lightweight backup utility to save and encrypt your files.
-This tool is intended to be used on small scale UNIX environment such as VPS, small servers and 
+This tool is intended to be used on small scale UNIX environments such as VPS, personal servers and
 workstations. `backup.sh` uses [rsync](https://linux.die.net/man/1/rsync), [tar](https://linux.die.net/man/1/tar)
 and [openssl](https://linux.die.net/man/1/openssl) to copy, compress and encrypt the backup. 
+
+While `backup.sh` should work in any POSIX compliant environment, the official supported operating systems are:
+- GNU/Linux;
+- FreeBSD;
+- Apple MacOS.
 
 ## Installation
 `backup.sh` consists in a single source file, to install it you can copy the script wherever you want.
@@ -156,7 +161,7 @@ This command encrypts the backup using the AES-256-CBC symmetric encryption algo
 key. Here is what each option means:
 - `enc`: **encrypt mode**: tell openssl to use encryption functionality;  
 - `-aes-256-cbc`: **encryption algorithm**: this option tells openssl which encryption algorithm to use;  
-- `-md sh512`: **hashing algorithm**: this option tells openssl which hashing algorithm to use for key derivation,
+- `-md sha512`: **hashing algorithm**: this option tells openssl which hashing algorithm to use for key derivation,
 i.e., converting the text-based password(`$PASSWORD`) into an encryption key;  
 - `-pbkdf2`: **key deriving algorithm**: this option tells openssl which key deriving algorithm to use. In this case
 we use the _password-based key derivation function 2_ algorithm;  
@@ -179,3 +184,5 @@ $> sudo ./tests.sh I_HAVE_READ_THE_HELPER
 ```
 
 ## License
+This software is released under GPLv3, you can obtain a copy of this license by cloning this repository or by visiting 
+[this page](https://choosealicense.com/licenses/gpl-3.0/).
