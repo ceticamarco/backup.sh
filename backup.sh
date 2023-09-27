@@ -54,6 +54,8 @@ make_backup() {
     BACKUP_SH_FOLDER="backup.sh.tmp"
     BACKUP_SH_OUTPUT="$BACKUP_SH_OUTPATH/$BACKUP_SH_FOLDER"
     BACKUP_SH_START_TIME="$(date +%s)"
+    BACKUP_SH_FILENAME="$BACKUP_SH_OUTPATH"/"backup-$(uname -n)-$BACKUP_SH_DATE.tar.gz.enc"
+
     declare -A BACKUP_SH_SOURCES
 
     # Check for root permissions
@@ -95,13 +97,20 @@ make_backup() {
     echo "Compressing and encrypting backup..."
     tar -cz -C "$BACKUP_SH_OUTPATH" $BACKUP_SH_FOLDER | \
         openssl enc -aes-256-cbc -md sha512 -pbkdf2 -iter 100000 -salt -k "$BACKUP_SH_PASS" \
-        > "$BACKUP_SH_OUTPATH"/"backup-$(uname -n)-$BACKUP_SH_DATE.tar.gz.enc"
+        > $BACKUP_SH_FILENAME
 
     # Remove temporary files
     rm -rf "$BACKUP_SH_OUTPUT"
 
-    # Print elapsed time
+    # Print file name, file size, file hash and elapsed time,
     BACKUP_SH_END_TIME="$(date +%s)"
+    BACKUP_SH_FILE_SIZE="$(ls -l $BACKUP_SH_FILENAME |  awk '{print $5}')"
+    BACKUP_SH_FILE_SIZE_H="$(ls -lh $BACKUP_SH_FILENAME | awk '{print $5}')"
+    BACKUP_SH_HASH="$(md5sum $BACKUP_SH_FILENAME | awk '{print $1}')"
+
+    echo "File name: $BACKUP_SH_FILENAME"
+    echo "File size: $BACKUP_SH_FILE_SIZE($BACKUP_SH_FILE_SIZE_H)"
+    echo "File hash: $BACKUP_SH_HASH"
     echo "Elapsed time: $(("$BACKUP_SH_END_TIME" - "$BACKUP_SH_START_TIME")) seconds."
 }
 
