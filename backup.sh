@@ -98,7 +98,7 @@ make_backup() {
     # Compress backup directory
     echo "Compressing backup..."
     tar -czf "$BACKUP_SH_OUTPATH/backup.sh.tar.gz" \
-        -C "$BACKUP_SH_OUTPUT/" . > /dev/null 2>&1
+        -C "$BACKUP_SH_OUTPATH" "$BACKUP_SH_FOLDER" > /dev/null 2>&1
 
     # Encrypt backup directory
     echo "Encrypting backup..."
