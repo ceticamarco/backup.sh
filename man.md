@@ -84,8 +84,12 @@ The backup utility will begin to copy the files defined in the sources file:
 ```
 Copying nginx(1/2)
 Copying ssh(2/2)
-Compressing and encrypting backup...
-Elapsed time: 10 seconds.
+Compressing backup...
+Encrypting backup...
+File name: /home/marco/backup-<HOSTNAME>-<YYYYMMDD>.tar.gz.enc
+File size: 7336400696(6.9G)
+File hash: 0e75ca393117f389d9e8edfea7106d98
+Elapsed time: 259 seconds.
 ```
 
 After that, you will find the final backup archive in `/home/john/backup-<HOSTNAME>-<YYYYMMDD>.tar.gz.enc`.
