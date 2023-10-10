@@ -34,8 +34,10 @@ set -e
 
 # Check if dependencies are installed
 missing_dep=0
-for dep in rsync tar openssl ; do
-    if ! command -v $dep > /dev/null 2>&1; then
+deps=("rsync" "tar" "gpg")
+
+for dep in "${deps[@]}"; do
+    if ! command -v "$dep" > /dev/null 2>&1; then
         echo "Cannot find '$dep', please install it."
         missing_dep=1
     fi
@@ -93,14 +95,25 @@ make_backup() {
         BACKUP_SH_PROGRESS=$((BACKUP_SH_PROGRESS+1))
     done
 
-    # Compress and encrypt backup directory
-    echo "Compressing and encrypting backup..."
-    tar -cz -C "$BACKUP_SH_OUTPATH" $BACKUP_SH_FOLDER | \
-        openssl enc -aes-256-cbc -md sha512 -pbkdf2 -iter 100000 -salt -k "$BACKUP_SH_PASS" \
-        > "$BACKUP_SH_FILENAME"
+    # Compress backup directory
+    echo "Compressing backup..."
+    tar -czf "$BACKUP_SH_OUTPATH/backup.sh.tar.gz" \
+        -C "$BACKUP_SH_OUTPUT/" . > /dev/null 2>&1
+
+    # Encrypt backup directory
+    echo "Encrypting backup..."
+    gpg -a \
+        --symmetric \
+        --cipher-algo=AES256 \
+        --no-symkey-cache \
+        --pinentry-mode=loopback \
+        --batch --passphrase-fd 3 3<<< "$BACKUP_SH_PASS" \
+        --output "$BACKUP_SH_FILENAME" \
+        "$BACKUP_SH_OUTPATH/backup.sh.tar.gz" > /dev/null 2>&1
 
     # Remove temporary files
     rm -rf "$BACKUP_SH_OUTPUT"
+    rm -rf "$BACKUP_SH_OUTPATH/backup.sh.tar.gz"
 
     # Print file name, file size, file hash and elapsed time,
     BACKUP_SH_END_TIME="$(date +%s)"
@@ -118,10 +131,20 @@ extract_backup() {
     BACKUP_SH_ARCHIVE_PATH="$1"
     BACKUP_SH_ARCHIVE_PW="$2"
 
-    (openssl enc -aes-256-cbc -md sha512 -pbkdf2 -iter 100000 -salt -d \
-        -in "$BACKUP_SH_ARCHIVE_PATH" \
-        -k  "$BACKUP_SH_ARCHIVE_PW" | tar xvz) > /dev/null 2>&1 \
-            || (echo "Unable to extract backup." && exit 1)
+    # Decrypt the archive
+    gpg -a \
+        --decrypt \
+        --no-symkey-cache \
+        --pinentry-mode=loopback \
+        --batch --passphrase-fd 3 3<<<"$BACKUP_SH_ARCHIVE_PW" \
+        --output backup.sh.tar.gz \
+        "$BACKUP_SH_ARCHIVE_PATH"
+
+    # Extract archive
+    tar -xzf backup.sh.tar.gz 1> /dev/null 2>&1
+
+    # Remove temporary files
+    rm -rf backup.sh.tar.gz
 }
 
 helper() {

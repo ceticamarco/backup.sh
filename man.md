@@ -3,11 +3,11 @@ title: backup.sh
 section: 1
 header: General Commands Manual
 footer: Marco Cetica
-date: March 14, 2023
+date: October 10, 2023
 ---
 
 # NAME
-**backup.sh** is a POSIX compliant, modular and lightweight backup utility to save and encrypt your files.
+**backup.sh** - POSIX compliant, modular and lightweight backup utility to save and encrypt your files.
 
 # SYNOPSIS
 ```
@@ -21,7 +21,7 @@ options:
 # DESCRIPTION
 **backup.sh** is a POSIX compliant, modular and lightweight backup utility to save and encrypt your files. 
 This tool is intended to be used on small scale UNIX environment such as VPS, small servers and workstations. 
-**backup.sh** uses _rsync_, _tar_ and _openssl_ to copy, compress and encrypt the backup.
+**backup.sh** uses _rsync_, _tar_ and _gpg_ to copy, compress and encrypt the backup.
 
 # OPTIONS
 **backup.sh** supports two options: _backup creation_ and _backup extraction_.
@@ -88,7 +88,7 @@ Compressing and encrypting backup...
 Elapsed time: 10 seconds.
 ```
 
-After that, you will find the final backup archive in `/home/john/backup-<HOSTNAME>-<YYYMMDD>.tar.gz.enc`.
+After that, you will find the final backup archive in `/home/john/backup-<HOSTNAME>-<YYYYMMDD>.tar.gz.enc`.
 
 You can also use **backup.sh** from a crontab rule:
 
@@ -112,7 +112,7 @@ Where `<ENCRYPTED_ARCHIVE>` is the encrypted backup and `<ARCHIVE_PASSWORD>` is 
 
 For instance:
 ```
-$> ./backup.sh --extract backup-<hostname>-<YYYMMDD>.tar.gz.enc badpw1234
+$> ./backup.sh --extract backup-<hostname>-<YYYYMMDD>.tar.gz.enc badpw1234
 ```
 
 This will create a new folder called `backup.sh.tmp` in your local directory. 
@@ -124,7 +124,7 @@ backup-ssh-<YYYYMMDD>
 ```
 
 ## How does backup.sh work?
-**backup.sh** uses _rsync_ to copy the files, _tar_ to compress the backup and _openssl_ to encrypt it. 
+**backup.sh** uses _rsync_ to copy the files, _tar_ to compress the backup and _gpg_ to encrypt it. 
 By default, rsync is being used with the following parameters:
 
 ```
@@ -141,28 +141,31 @@ That is:
     - delete: delete mode: forces rsync to delete any extraneous files at the destination dir.
 
 
-After that the backup folder is being encrypred using openssl. By default, it is used with the following parameters:
+After that the backup folder is being encrypted using gpg. By default, it is used with the following parameters:
 
 
 ```
-$> openssl enc -aes-256-cbc -md sha512 -pbkdf2 -iter 100000 -salt -k "$PASSWORD" > file.tar.gz.enc
+$> gpg -a \
+        --symmetric \
+        --cipher-algo=AES256 \
+        --no-symkey-cache \
+        --pinentry-mode=loopback \
+        --batch --passphrase-fd 3 3<<< "$PASSWORD" \
+        --output "$OUTPUT" \
+        "$INPUT"
 ```
 
-This command encrypts the backup using the AES-256-CBC symmetric encryption algorithm with a 256bit key. Here is what each option means:
-
-    - enc: encrypt mode: tell openssl to use encryption functionality;  
-    - aes-256-cbc: encryption algorithm: this option tells openssl which encryption algorithm to use;  
-    - md sh512: hashing algorithm: this option tells openssl which hashing algorithm to use for key derivation,
-        i.e., converting the text-based password(`$PASSWORD`) into an encryption key;  
-    - pbkdf2: key deriving algorithm: this option tells openssl which key deriving algorithm to use. In this case
-        we use the _password-based key derivation function 2_ algorithm;  
-    - iter 100000: number of iterations: this options tells openssl the number of iteration to use for the key derivation
-        function;  
-    - salt: enable salting: this option tells openssl to add a random salt to the key derivation process in order to 
-        avoid rainbow table based attacks.
+This command encrypts the backup using the AES-256 symmetric encryption algorithm with a 256bit key. Here is what each flag do:
+ - `--symmetric`: Use symmetric encryption;  
+ - `--cipher-algo=AES256`: Use AES256 algorithm;  
+ - `--no-symkey-cache`: Do not save password on GPG's cache;  
+ - `--pinentry-mode=loopback --batch`: Do not prompt the user;  
+ - `--passphrase-fd 3 3<< "$PASSWORD"`: Read password without revealing it on `ps`;  
+ - `--output`: Specify output file;  
+ - `$INPUT`: Specify input file.
 
 # EXAMPLES
-Below there are some examples that demostrate **backup.sh**'s usage.
+Below there are some examples that demonstrate **backup.sh**'s usage.
 
 1. Create a backup of `/etc/ssh`, `/var/www` and `/var/log` inside the `/tmp` directory using a password
 stored in `/home/op1/.backup_pw`

@@ -2,10 +2,12 @@
 `backup.sh` is a POSIX compliant, modular and lightweight backup utility to save and encrypt your files.
 This tool is intended to be used on small scale UNIX environments such as VPS, personal servers and
 workstations. `backup.sh` uses [rsync](https://linux.die.net/man/1/rsync), [tar](https://linux.die.net/man/1/tar)
-and [openssl](https://linux.die.net/man/1/openssl) to copy, compress and encrypt the backup. 
+and [gpg](https://linux.die.net/man/1/gpg) to copy, compress and encrypt the backup. 
 
-While `backup.sh` should work in any POSIX compliant environment, the official supported operating systems are:
+While `backup.sh` should work in any POSIX compliant environment,
+`backup.sh` should work in any POSIX compliant environment, and it's successfully being used on
 - GNU/Linux;
+- OpenBSD
 - FreeBSD;
 - Apple MacOS.
 
@@ -22,7 +24,7 @@ you can issue `sudo make uninstall`.
 At this point you still need to install the following dependencies:
 - `rsync`
 - `tar`
-- `openssl`
+- `gpg`
 
 ## Usage
 To show the available options, you can run `backup.sh --help`, which will print out the following message:
@@ -91,11 +93,15 @@ The backup utility will begin to copy the files defined in the _sources file_:
 ```text
 Copying nginx(1/2)
 Copying ssh(2/2)
-Compressing and encrypting backup...
-Elapsed time: 10 seconds.
+Compressing backup...
+Encrypting backup...
+File name: /home/marco/backup-<HOSTNAME>-<YYYYMMDD>.tar.gz.enc
+File size: 7336400696(6.9G)
+File hash: 0e75ca393117f389d9e8edfea7106d98
+Elapsed time: 259 seconds.
 ```
 
-After that, you will find the final backup archive in `/home/john/backup-<HOSTNAME>-<YYYMMDD>.tar.gz.enc`.
+After that, you will find the final backup archive in `/home/john/backup-<HOSTNAME>-<YYYYMMDD>.tar.gz.enc`.
 
 You can also use `backup.sh` from a crontab rule:
 ```sh
@@ -120,7 +126,7 @@ Where `<ENCRYPTED_ARCHIVE>` is the encrypted backup and `<ARCHIVE_PASSWORD>` is 
 For instance:
 
 ```sh
-$> ./backup.sh --extract backup-<hostname>-<YYYMMDD>.tar.gz.enc badpw1234
+$> ./backup.sh --extract backup-<hostname>-<YYYYMMDD>.tar.gz.enc badpw1234
 ```
 
 This will create a new folder called `backup.sh.tmp` in your local directory. Be sure to rename any directory
@@ -131,44 +137,46 @@ backup-ssh-<YYYYMMDD>
 ```
 
 
-## How does `backup.sh` work?
-`backup.sh` uses **rsync** to copy the files, **tar** to compress the backup and **openssl**
-to encrypt it. By default, rsync is being used with the following parameters:
-```sh
+## How does backup.sh work?
+**backup.sh** uses _rsync_ to copy the files, _tar_ to compress the backup and _gpg_ to encrypt it. 
+By default, rsync is being used with the following parameters:
+
+```
 $> rsync -aPhrq --delete
 ```
 
 That is:
 
-- `-a`: **archive mode**: rsync copies files recursively while preserving as much metadata
-as possible;  
-- `-P`: **progress/partial**, this allows rsync to resume interrupted transfers and to 
-shows progress information;  
-- `-h`: **human readable output**: rsync shows output numbers in a more readable way;  
-- `-r`: **recursive mode**: forces rsync to copy directories and their content;  
-- `-q`: **quiet mode**: reduces the amount of information rsync produces;  
-- `--delete`: **delete mode**: forces rsync to delete any extraneous files at the
-destination dir.
+    - a: archive mode: rsync copies files recursively while preserving as much metadata as possible;  
+    - P: progress/partial: allows rsync to resume interrupted transfers and to shows progress information;  
+    - h: human readable output, rsync shows output numbers in a more readable way;  
+    - r: recursive mode: forces rsync to copy directories and their content;  
+    - q: quiet mode: reduces the amount of information rsync produces;  
+    - delete: delete mode: forces rsync to delete any extraneous files at the destination dir.
 
 
-After that the backup folder is being encrypred using openssl. By default, it is used
-with the following parameters:
-```sh
-$> openssl enc -aes-256-cbc -md sha512 -pbkdf2 -iter 100000 -salt -k "$PASSWORD" > file.tar.gz.enc
+After that the backup folder is being encrypted using gpg. By default, it is used with the following parameters:
+
+
+```
+$> gpg -a \
+        --symmetric \
+        --cipher-algo=AES256 \
+        --no-symkey-cache \
+        --pinentry-mode=loopback \
+        --batch --passphrase-fd 3 3<<< "$PASSWORD" \
+        --output "$OUTPUT" \
+        "$INPUT"
 ```
 
-This command encrypts the backup using the AES-256-CBC symmetric encryption algorithm with a 256bit
-key. Here is what each option means:
-- `enc`: **encrypt mode**: tell openssl to use encryption functionality;  
-- `-aes-256-cbc`: **encryption algorithm**: this option tells openssl which encryption algorithm to use;  
-- `-md sha512`: **hashing algorithm**: this option tells openssl which hashing algorithm to use for key derivation,
-i.e., converting the text-based password(`$PASSWORD`) into an encryption key;  
-- `-pbkdf2`: **key deriving algorithm**: this option tells openssl which key deriving algorithm to use. In this case
-we use the _password-based key derivation function 2_ algorithm;  
-- `-iter 100000`: **number of iterations**: this options tells openssl the number of iteration to use for the key derivation
-function;  
-- `-salt`: **enable salting**: this option tells openssl to add a random salt to the key derivation process in order to 
-avoid rainbow table based attacks.
+This command encrypts the backup using the AES-256 symmetric encryption algorithm with a 256bit key. Here is what each flag do:
+ - `--symmetric`: Use symmetric encryption;  
+ - `--cipher-algo=AES256`: Use AES256 algorithm;  
+ - `--no-symkey-cache`: Do not save password on GPG's cache;  
+ - `--pinentry-mode=loopback --batch`: Do not prompt the user;  
+ - `--passphrase-fd 3 3<< "$PASSWORD"`: Read password without revealing it on `ps`;  
+ - `--output`: Specify output file;  
+ - `$INPUT`: Specify input file.
 
 ## Unit tests
 `backup.sh` provides some unit tests inside the `tests.sh` script. This script generates some dummy files inside the following
