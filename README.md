@@ -18,7 +18,7 @@ Alternatively, you can install the script, the default sources file and the man 
 $> sudo make install
 ```
 This will copy `backup.sh` into `/usr/local/bin/backup.sh`, `sources.bk` into `/usr/local/etc/sources.bk` and
-`backup.sh.1` into `/usr/local/share/man/man1/backup.sh.1`. To uninstall the program along with the sample _sources file_ and the manual page,
+`backup.sh.1` into `/usr/share/man/man1/backup.sh.1`. To uninstall the program along with the sample _sources file_ and the manual page,
 you can issue `sudo make uninstall`.
 
 At this point you still need to install the following dependencies:
