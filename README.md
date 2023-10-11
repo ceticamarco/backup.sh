@@ -4,8 +4,7 @@ This tool is intended to be used on small scale UNIX environments such as VPS, p
 workstations. `backup.sh` uses [rsync](https://linux.die.net/man/1/rsync), [tar](https://linux.die.net/man/1/tar)
 and [gpg](https://linux.die.net/man/1/gpg) to copy, compress and encrypt the backup. 
 
-While `backup.sh` should work in any POSIX compliant environment,
-`backup.sh` should work in any POSIX compliant environment, and it's successfully being used on
+`backup.sh` works under the following operating systems: 
 - GNU/Linux;
 - OpenBSD
 - FreeBSD;
