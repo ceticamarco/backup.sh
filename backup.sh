@@ -34,7 +34,7 @@ set -e
 
 # Check if dependencies are installed
 missing_dep=0
-deps=("rsync" "tar" "gpg" "md5sum")
+deps=("rsync" "tar" "gpg")
 
 for dep in "${deps[@]}"; do
     if ! command -v "$dep" > /dev/null 2>&1; then
@@ -46,6 +46,20 @@ done
 if [ $missing_dep -ne 0 ]; then
     exit 1
 fi
+
+checksum() {
+    BACKUP_SH_FILENAME="$1"
+    BACKUP_SH_OS="$(uname)"
+    BACKUP_SH_OS="${BACKUP_SH_OS^^}"
+
+    if [[ $BACKUP_SH_OS == "LINUX" ]]; then
+        RES="$(md5sum "$BACKUP_SH_FILENAME" | awk '{print $1}')"
+    else
+        RES="$(md5 -q "$BACKUP_SH_FILENAME")"
+    fi
+
+    echo "$RES"
+}
 
 make_backup() {
     BACKUP_SH_SOURCES_PATH="$1"
@@ -119,7 +133,7 @@ make_backup() {
     BACKUP_SH_END_TIME="$(date +%s)"
     BACKUP_SH_FILE_SIZE="$(find "$BACKUP_SH_FILENAME" -exec ls -l {} \; |  awk '{print $5}')"
     BACKUP_SH_FILE_SIZE_H="$(find "$BACKUP_SH_FILENAME" -exec ls -lh {} \; | awk '{print $5}')"
-    BACKUP_SH_HASH="$(md5sum "$BACKUP_SH_FILENAME" | awk '{print $1}')"
+    BACKUP_SH_HASH="$(checksum "$BACKUP_SH_FILENAME")"
 
     echo "File name: $BACKUP_SH_FILENAME"
     echo "File size: $BACKUP_SH_FILE_SIZE($BACKUP_SH_FILE_SIZE_H)"
