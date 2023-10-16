@@ -34,7 +34,7 @@ set -e
 
 # Check if dependencies are installed
 missing_dep=0
-deps=("rsync" "tar" "gpg")
+deps=("rsync" "tar" "gpg", "md5sum")
 
 for dep in "${deps[@]}"; do
     if ! command -v "$dep" > /dev/null 2>&1; then
