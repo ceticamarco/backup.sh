@@ -70,7 +70,7 @@ make_backup() {
     BACKUP_SH_FOLDER="backup.sh.tmp"
     BACKUP_SH_OUTPUT="$BACKUP_SH_OUTPATH/$BACKUP_SH_FOLDER"
     BACKUP_SH_START_TIME="$(date +%s)"
-    BACKUP_SH_FILENAME="$BACKUP_SH_OUTPATH"/"backup-$(uname -n)-$BACKUP_SH_DATE.tar.gz.enc"
+    BACKUP_SH_FILENAME="$BACKUP_SH_OUTPATH/backup-$(uname -n)-$BACKUP_SH_DATE.tar.gz.enc"
 
     declare -A BACKUP_SH_SOURCES
 
