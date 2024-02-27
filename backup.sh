@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh -e
 # backup.sh is a POSIX compliant, modular and lightweight
 # backup utility to save and encrypt your files.
 #
@@ -27,32 +27,31 @@
 #
 # You can read the full guide on https://github.com/ice-bit/backup.sh
 # or on the manual page.
-# Copyright (c) 2018,2023 Marco Cetica <email@marcocetica.com>
+# Copyright (c) 2018,2023,2024 Marco Cetica <email@marcocetica.com>
 #
 
-set -e
+checkdeps() {
+    # Check if dependencies are installed
+    missing_dep=0
+    deps="rsync tar gpg"
 
-# Check if dependencies are installed
-missing_dep=0
-deps=("rsync" "tar" "gpg")
+    for dep in $deps; do
+        if ! command -v "$dep" > /dev/null 2>&1; then
+            printf "Cannot find '%s', please install it.\n" "$dep"
+            missing_dep=1
+        fi
+    done
 
-for dep in "${deps[@]}"; do
-    if ! command -v "$dep" > /dev/null 2>&1; then
-        echo "Cannot find '$dep', please install it."
-        missing_dep=1
+    if [ $missing_dep -ne 0 ]; then
+        exit 1
     fi
-done
-
-if [ $missing_dep -ne 0 ]; then
-    exit 1
-fi
+}
 
 checksum() {
     BACKUP_SH_FILENAME="$1"
-    BACKUP_SH_OS="$(uname)"
-    BACKUP_SH_OS="${BACKUP_SH_OS^^}"
+    BACKUP_SH_OS="$(uname | tr '[:lower:]' '[:upper:]')"
 
-    if [[ $BACKUP_SH_OS == "LINUX" ]]; then
+    if [ "$BACKUP_SH_OS" = "LINUX" ]; then
         RES="$(md5sum "$BACKUP_SH_FILENAME" | awk '{print $1}')"
     else
         RES="$(md5 -q "$BACKUP_SH_FILENAME")"
@@ -72,8 +71,6 @@ make_backup() {
     BACKUP_SH_START_TIME="$(date +%s)"
     BACKUP_SH_FILENAME="$BACKUP_SH_OUTPATH/backup-$(uname -n)-$BACKUP_SH_DATE.tar.gz.enc"
 
-    declare -A BACKUP_SH_SOURCES
-
     # Check for root permissions
     if [ "$(id -u)" -ne 0 ]; then
         echo "Run this tool as root!"
@@ -86,28 +83,22 @@ make_backup() {
         exit 1
     fi
 
-    # Read associative array from file
-    readarray -t lines < "$BACKUP_SH_SOURCES_PATH"
-    for line in "${lines[@]}"; do
-        label=${line%%=*}
-        path=${line#*=}
-        BACKUP_SH_SOURCES[$label]=$path
-    done
-
     # Create temporary directory
     mkdir -p "$BACKUP_SH_OUTPUT"
 
     # For each item in the array, make a backup
+    BACKUP_SH_TOTAL=$(wc -l < "$BACKUP_SH_SOURCES_PATH")
     BACKUP_SH_PROGRESS=1
-    for item in "${!BACKUP_SH_SOURCES[@]}"; do
+
+    while IFS='=' read -r label path; do
         # Define a subdir for each backup entry
-        BACKUP_SH_SUBDIR="$BACKUP_SH_OUTPUT/backup-$item-$BACKUP_SH_DATE"
+        BACKUP_SH_SUBDIR="$BACKUP_SH_OUTPUT/backup-$label-$BACKUP_SH_DATE"
         mkdir -p "$BACKUP_SH_SUBDIR"
 
-        echo "Copying $item($BACKUP_SH_PROGRESS/${#BACKUP_SH_SOURCES[*]})"
-        $BACKUP_SH_COMMAND "${BACKUP_SH_SOURCES[$item]}" "$BACKUP_SH_SUBDIR"
+        printf "Copying %s(%s/%s)\n" "$label" "$BACKUP_SH_PROGRESS" "$BACKUP_SH_TOTAL"
+        $BACKUP_SH_COMMAND "$path" "$BACKUP_SH_SUBDIR"
         BACKUP_SH_PROGRESS=$((BACKUP_SH_PROGRESS+1))
-    done
+    done < "$BACKUP_SH_SOURCES_PATH"
 
     # Compress backup directory
     echo "Compressing backup..."
@@ -121,7 +112,7 @@ make_backup() {
         --cipher-algo=AES256 \
         --no-symkey-cache \
         --pinentry-mode=loopback \
-        --batch --passphrase-fd 3 3<<< "$BACKUP_SH_PASS" \
+        --batch --passphrase "$BACKUP_SH_PASS" \
         --output "$BACKUP_SH_FILENAME" \
         "$BACKUP_SH_OUTPATH/backup.sh.tar.gz" > /dev/null 2>&1
 
@@ -138,7 +129,7 @@ make_backup() {
     echo "File name: $BACKUP_SH_FILENAME"
     echo "File size: $BACKUP_SH_FILE_SIZE($BACKUP_SH_FILE_SIZE_H)"
     echo "File hash: $BACKUP_SH_HASH"
-    echo "Elapsed time: $(("$BACKUP_SH_END_TIME" - "$BACKUP_SH_START_TIME")) seconds."
+    printf "Elapsed time: %s seconds.\n" "$((BACKUP_SH_END_TIME - BACKUP_SH_START_TIME))"
 }
 
 extract_backup() {
@@ -150,7 +141,7 @@ extract_backup() {
         --decrypt \
         --no-symkey-cache \
         --pinentry-mode=loopback \
-        --batch --passphrase-fd 3 3<<<"$BACKUP_SH_ARCHIVE_PW" \
+        --batch --passphrase "$BACKUP_SH_ARCHIVE_PW" \
         --output backup.sh.tar.gz \
         "$BACKUP_SH_ARCHIVE_PATH"
 
@@ -178,49 +169,56 @@ Report bugs to: Marco Cetica(<email@marcocetica.com>)
 EOF
 }
 
+main() {
+    # Check whether dependecies are installed
+    checkdeps
 
-if [ $# -eq 0 ]; then
-    echo "Please, specify an argument."
-    echo "For more information, try --help."
-    exit 1
-fi
+    if [ $# -eq 0 ]; then
+        echo "Please, specify an argument."
+        echo "For more information, try --help."
+        exit 1
+    fi
 
-# Parse CLI arguments
-while [ $# -gt 0 ]; do
-    case $1 in
-        -b|--backup)
-            BACKUP_SH_SOURCES_PATH="$2"
-            BACKUP_SH_OUTPATH="$3"
-            BACKUP_SH_PASSWORD="$4"
+    # Parse CLI arguments
+    while [ $# -gt 0 ]; do
+        case $1 in
+            -b|--backup)
+                BACKUP_SH_SOURCES_PATH="$2"
+                BACKUP_SH_OUTPATH="$3"
+                BACKUP_SH_PASSWORD="$4"
 
-            if [ -z "$BACKUP_SH_SOURCES_PATH" ] || [ -z "$BACKUP_SH_OUTPATH" ] || [ -z "$BACKUP_SH_PASSWORD" ]; then
-                echo "Please, specify a source file, an output path and a password."
-                echo "For more informatio, try --help"
+                if [ -z "$BACKUP_SH_SOURCES_PATH" ] || [ -z "$BACKUP_SH_OUTPATH" ] || [ -z "$BACKUP_SH_PASSWORD" ]; then
+                    echo "Please, specify a source file, an output path and a password."
+                    echo "For more informatio, try --help"
+                    exit 1
+                fi
+                make_backup "$BACKUP_SH_SOURCES_PATH" "$BACKUP_SH_OUTPATH" "$BACKUP_SH_PASSWORD"
+                exit 0
+                ;;
+            -e|--extract)
+                BACKUP_SH_ARCHIVE_PATH="$2"
+                BACKUP_SH_ARCHIVE_PW="$3"
+
+                if [ -z "$BACKUP_SH_ARCHIVE_PATH" ] || [ -z "$BACKUP_SH_ARCHIVE_PW" ]; then
+                    echo "Please, specify an encrypted archive and a password."
+                    echo "For more informatio, try --help"
+                    exit 1
+                fi
+                extract_backup "$BACKUP_SH_ARCHIVE_PATH" "$BACKUP_SH_ARCHIVE_PW"
+                exit 0
+                ;;
+            -h|--help)
+                helper "$0"
+                exit 0
+                ;;
+            *)
+                echo "Unknown option $1."
+                echo "For more information, try --help"
                 exit 1
-            fi
-            make_backup "$BACKUP_SH_SOURCES_PATH" "$BACKUP_SH_OUTPATH" "$BACKUP_SH_PASSWORD"
-            exit 0
-            ;;
-        -e|--extract)
-            BACKUP_SH_ARCHIVE_PATH="$2"
-            BACKUP_SH_ARCHIVE_PW="$3"
+                ;;
+        esac
+    done
+}
 
-            if [ -z "$BACKUP_SH_ARCHIVE_PATH" ] || [ -z "$BACKUP_SH_ARCHIVE_PW" ]; then
-                echo "Please, specify an encrypted archive and a password."
-                echo "For more informatio, try --help"
-                exit 1
-            fi
-            extract_backup "$BACKUP_SH_ARCHIVE_PATH" "$BACKUP_SH_ARCHIVE_PW"
-            exit 0
-            ;;
-        -h|--help)
-            helper "$0"
-            exit 0
-            ;;
-        *)
-            echo "Unknown option $1."
-            echo "For more information, try --help"
-            exit 1
-            ;;
-    esac
-done
+main "$@"
+# vim: ts=4 sw=4 softtabstop=4 expandtab:

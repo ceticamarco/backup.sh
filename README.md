@@ -105,7 +105,7 @@ After that, you will find the final backup archive in `/home/john/backup-<HOSTNA
 You can also use `backup.sh` from a crontab rule:
 ```sh
 $> sudo crontab -e
-30 03 * * 6 EKEY=$(cat /home/john/.ekey) bash -c '/usr/local/bin/backup.sh -b /usr/local/etc/sources.bk /home/john $EKEY' > /dev/null 2>&1
+30 03 * * 6 EKEY=$(cat /home/john/.ekey) sh -c '/usr/local/bin/backup.sh -b /usr/local/etc/sources.bk /home/john $EKEY' > /dev/null 2>&1
 
 ```
 
@@ -163,7 +163,7 @@ $> gpg -a \
         --cipher-algo=AES256 \
         --no-symkey-cache \
         --pinentry-mode=loopback \
-        --batch --passphrase-fd 3 3<<< "$PASSWORD" \
+        --batch --passphrase "$PASSWORD" \
         --output "$OUTPUT" \
         "$INPUT"
 ```

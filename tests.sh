@@ -1,11 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Unit tests for backup.sh
 # This tool is NOT intended to be used outside
 # of a testing environment, please use at your own risk.
 # By Marco Cetica 2023 (<email@marcocetica.com>)
 #
-
-set -e
 
 helper() {
     cat <<EOF
