@@ -5,6 +5,8 @@
 # By Marco Cetica 2023 (<email@marcocetica.com>)
 #
 
+set -e
+
 helper() {
     cat <<EOF
 backup.sh unit testing suite.
@@ -49,11 +51,13 @@ create_files() {
 }
 
 execute_backup() {
-    ./backup.sh -b sources.bk "$PWD" badpw
+    ./backup.sh -c -b sources.bk "$PWD" badpw
 }
 
 extract_backup() {
-    ./backup.sh -e "$PWD"/backup-*-*.tar.gz.enc badpw
+    host="$(uname -n)"
+    date="$(date +'%Y%m%d')"
+    ./backup.sh -c -e "$PWD"/backup-"$host"-"$date".tar.gz.enc badpw "$PWD"/backup-"$host"-"$date".sha256
 }
 
 test_backup() {

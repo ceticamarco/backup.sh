@@ -3,7 +3,7 @@ title: backup.sh
 section: 1
 header: General Commands Manual
 footer: Marco Cetica
-date: February 27, 2024
+date: April 3, 2024
 ---
 
 # NAME
@@ -11,102 +11,107 @@ date: February 27, 2024
 
 # SYNOPSIS
 ```
-Syntax: backup.sh [-b|-e|-h]
+Syntax: ./backup.sh [-b|-c|-e|-h]
 options:
--b|--backup  SOURCES DEST PASS  Backup folders from SOURCES file.
--e|--extract ARCHIVE PASS       Extract ARCHIVE using PASS.
--h|--help                       Show this helper.
+-b|--backup   SOURCES DEST PASS  Backup folders from SOURCES file.
+-c|--checksum                    Generate/check SHA256 of a backup.
+-e|--extract  ARCHIVE PASS       Extract ARCHIVE using PASS.
+-h|--help                        Show this helper.
 ```
 
 # DESCRIPTION
 **backup.sh** is a POSIX compliant, modular and lightweight backup utility to save and encrypt your files. 
 This tool is intended to be used on small scale UNIX environment such as VPS, small servers and workstations. 
-**backup.sh** uses _rsync_, _tar_ and _gpg_ to copy, compress and encrypt the backup.
+**backup.sh** uses _rsync_, _tar_, _sha256sum_ and _gpg_ to copy, compress, verify and encrypt the backup.
 
 # OPTIONS
-**backup.sh** supports two options: _backup creation_ and _backup extraction_.
-The former requires root permissions, while the latter does not. Let us see them in details:
+**backup.sh** supports three options: **backup creation**, **backup extraction** and **checksum** to verify the
+integrity of a backup. The first option requires
+root permissions, while the second one does not. The checksum option must be used in combination of one of the previous options.
 
 ## Backup creation
-To specify the directories to backup, **backup.sh** uses an associative array defined in a text file(called sources file) 
-with the following syntax:
+To specify the directories to back up, `backup.sh` uses an associative array
+defined in a text file(called _sources file_) with the following syntax:
 
 ```
 <LABEL>=<PATH>
 ```
 
-Where `<LABEL>` is the name of the backup and `<PATH>` is its path. 
-For example, if you want to back up _/etc/nginx_ and _/etc/ssh_, add the following entries to the sources file:
+Where `<LABEL>` is the name of the backup and `<PATH>` is its path. For example,
+if you want to back up `/etc/nginx` and `/etc/ssh`, add the following entries to the _sources file_:
 
 ```
 nginx=/etc/nginx/
 ssh=/etc/ssh/
 ```
 
-**backup.sh** will create two folders inside the backup archive with the following syntax:
-
+`backup.sh` will create two folders inside the backup archive with the following syntax:
 ```
 backup-<LABEL>-<YYYYMMDD>
 ```
 
 In the previous example, this would be:
-
 ```
 backup-nginx-<YYYYMMDD>
 backup-ssh-<YYYYMMDD>
 ```
 
-You can add as many entries as you want, just be sure to use the proper syntax. 
-In particular, the sources file, _should not_ includes:
+You can add as many entries as you want, just be sure to use the proper syntax. In particular,
+the _sources file_, **should not** include:
+- Spaces between the label and the equal sign;  
+- Empty lines;  
+- Comments.
 
-    - Spaces between the label and the equal sign;  
-    - Empty lines;  
-    - Comments.  
+You can find a sample _sources file_ at `sources.bk`(or at `/usr/local/etc/sources.bk`).
 
-You can find a sample sources file at `sources.bk`(or at `/usr/local/etc/sources.bk`).
-
-After having defined the sources file, you can invoke **backup.sh** using the following syntax:
+After having defined the _sources file_, you can invoke `backup.sh` using the following syntax:
 ```
 $> sudo ./backup.sh --backup <SOURCES_FILE> <DEST> <ENCRYPTION_PASSWORD>
 ```
 
-Where `<SOURCES_FILE>` is the _sources file_, `<DEST>` is the absolute path of the output of the backup _without trailing slashes_ 
-and `<ENCRYPTION_PASSWORD>` is the password to encrypt the compressed archive.
+Where `<SOURCES_FILE>` is the _sources file_, `<DEST>` is the absolute path of the output of the backup 
+**without trailing slashes** and `<ENCRYPTION_PASSWORD>` is the password to encrypt the compressed archive.
 
 In the previous example, this would be:
-
 ```
 $> sudo ./backup.sh --backup sources.bk /home/john badpw1234
 ```
 
-The backup utility will begin to copy the files defined in the sources file:
+You can also tell `backup.sh` to generate a SHA256 file containing the hash of each file using the `-c` option. 
+In the previous example, this would be:
+```
+$> sudo ./backup.sh --checksum --backup sources.bk /home/john badpw1234
+```
 
+The backup utility will begin to copy the files defined in the _sources file_:
 ```
 Copying nginx(1/2)
 Copying ssh(2/2)
 Compressing backup...
 Encrypting backup...
-File name: /home/marco/backup-<HOSTNAME>-<YYYYMMDD>.tar.gz.enc
+File name: /home/john/backup-<HOSTNAME>-<YYYYMMDD>.tar.gz.enc
+Checksum file: /home/john/backup-<HOSTNAME>-<YYYYMMDD>.sha256
 File size: 7336400696(6.9G)
-File hash: 0e75ca393117f389d9e8edfea7106d98
 Elapsed time: 259 seconds.
 ```
 
-After that, you will find the final backup archive in `/home/john/backup-<HOSTNAME>-<YYYYMMDD>.tar.gz.enc`.
+After that, you will find the backup archive and the checksum file in 
+`/home/john/backup-<HOSTNAME>-<YYYYMMDD>.tar.gz.enc` and `/home/john/backup-<HOSTNAME>-<YYYYMMDD>.sha256`, respectively.
 
-You can also use **backup.sh** from a crontab rule:
-
+You can also use `backup.sh` from a crontab rule:
 ```
 $> sudo crontab -e
 30 03 * * 6 EKEY=$(cat /home/john/.ekey) sh -c '/usr/local/bin/backup.sh -b /usr/local/etc/sources.bk /home/john $EKEY' > /dev/null 2>&1
+
 ```
 
-This will automatically run **backup.sh** every Saturday morning at 03:30 AM. 
-In the example above, the encryption key is stored in a local file(with fixed permissions) to avoid password leaking in crontab logs. 
-You can also adopt this practice while using the `--extract` option to avoid password leaking in shell history.
+This will automatically run `backup.sh` every Saturday morning at 03:30 AM. In the example above, the encryption
+key is stored in a local file(with fixed permissions) to avoid password leaking in crontab logs. You can also
+adopt this practice while using the `--extract` option to avoid password leaking in shell history.
 
 ## Backup extraction
-**backup.sh** can also extract the encrypted backup archive using the following syntax:
+**backup.sh** can also be used to extract the encrypted backup as well to verify the integrity
+of the backup data. To do so, use the following commands:
 
 ```
 $> ./backup.sh --extract <ENCRYPTED_ARCHIVE> <ARCHIVE_PASSWORD>
@@ -115,20 +120,36 @@ $> ./backup.sh --extract <ENCRYPTED_ARCHIVE> <ARCHIVE_PASSWORD>
 Where `<ENCRYPTED_ARCHIVE>` is the encrypted backup and `<ARCHIVE_PASSWORD>` is the backup password.
 
 For instance:
+
 ```
 $> ./backup.sh --extract backup-<hostname>-<YYYYMMDD>.tar.gz.enc badpw1234
 ```
 
-This will create a new folder called `backup.sh.tmp` in your local directory. 
-Be sure to rename any directory with that name to avoid collisions. From the previous example, you should have the following directories:
-
+This will create a new folder called `backup.sh.tmp` in your local directory with the following content: 
 ```
 backup-nginx-<YYYYMMDD>
 backup-ssh-<YYYYMMDD>
 ```
 
+**note:**: be sure to rename any directory with that name to avoid collisions.
+
+
+Instead, if you also want to verify the integrity of the backup data, use the following commands:
+```
+$> ./backup.sh --checksum --extract <ENCRYPTED_ARCHIVE> <ARCHIVE_PASSWORD> <CHECKSUM_ABSOLUTE_PATH>
+```
+
+For instance:
+
+```
+$> ./backup.sh --checksum --extract backup-<hostname>-<YYYYMMDD>.tar.gz.enc badpw1234 $PWD/backup-<hostname>-<YYYYMMDD>.sha256
+```
+
+**note:** be sure to provide the ABSOLUTE PATH of the checksum file.
+
 ## How does backup.sh work?
-**backup.sh** uses _rsync_ to copy the files, _tar_ to compress the backup and _gpg_ to encrypt it. 
+**backup.sh** uses _rsync_ to copy the files, _tar_ to compress the backup, _gpg_ to encrypt it and
+_sha256sum_ to verify it.
 By default, rsync is being used with the following parameters:
 
 ```
@@ -144,9 +165,14 @@ That is:
     - q: quiet mode: reduces the amount of information rsync produces;  
     - delete: delete mode: forces rsync to delete any extraneous files at the destination dir.
 
+If specified(`--checksum` option), `backup.sh` can also generate the checksum of each file of the backup.
+To do so, it uses `sha256sum(1)` to compute the hash of every single file using the SHA256 hashing algorithm.
+The checksum file contains nothing but the checksums of the files, no other information about the files stored
+on the backup archive is exposed on the unencrypted checksum file. This may be an issue if you want plausible
+deniability(see privacy section for more information).
+
 
 After that the backup folder is being encrypted using gpg. By default, it is used with the following parameters:
-
 
 ```
 $> gpg -a \
@@ -154,7 +180,7 @@ $> gpg -a \
         --cipher-algo=AES256 \
         --no-symkey-cache \
         --pinentry-mode=loopback \
-        --batch --passphrase-fd "$PASSWORD" \
+        --batch --passphrase "$PASSWORD" \
         --output "$OUTPUT" \
         "$INPUT"
 ```
@@ -167,6 +193,19 @@ This command encrypts the backup using the AES-256 symmetric encryption algorith
  - `--passphrase-fd 3 3<< "$PASSWORD"`: Read password without revealing it on `ps`;  
  - `--output`: Specify output file;  
  - `$INPUT`: Specify input file.
+
+## Plausible Deniability
+While `backup.sh` provide some pretty strong security against bruteforce attack(assuming a strong passphrase is being used)
+it should by no means considered a viable tool against a cryptanalysis investigation. Many of the copying, compressing and
+encrypting operations made by `backup.sh` during the backup process can be used to invalidate plausible deniability.
+In particular, you should pay attention to the following details:
+
+1. The `--checksum` option generates an **UNENCRYPTED** checksum file containing the _digests_ of **EVERY**
+file in your backup archive. If your files are known to your adversary(e.g., a banned book), they may use a rainbow table attack to
+determine whether you own a given file, voiding your plausible deniability;  
+2. Since `backup.sh` is essentially a set of shell commands, an eavesdropper could monitor the whole backup process to extract
+the name of the files or the encryption password.
+
 
 # EXAMPLES
 Below there are some examples that demonstrate **backup.sh**'s usage.
@@ -183,7 +222,7 @@ web_root=/var/www
 logs=/var/log
 ```
 
-After that we can load our encryption key from the specified file inside a environment variable:
+After that we can load our encryption key from the specified file inside an environment variable:
 
 ```
 $> ENC_KEY=$(cat /home/op1/.backup_pw)
@@ -194,7 +233,6 @@ Finally, we can start the backup process with:
 ```
 $> sudo backup.sh --backup sources.bk /tmp $ENC_KEY
 ```
-
 
 
 2. Extract the content of a backup made on 2023-03-14 with the password 'Ax98f!'
