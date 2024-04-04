@@ -55,16 +55,11 @@ checkdeps() {
 
 # $1: filename
 gethash() {
-    FILE_NAME="$1"
-    OS="$(uname)"
-
-    if [ "$OS" = "Linux" ]; then
-        HASH="$(sha256sum "$FILE_NAME" | awk '{print $1}')"
+    if [ "$(uname)" = "Linux" ]; then
+        sha256sum "$1" | awk '{print $1}'
     else
-        HASH="$(sha256 -q "$FILE_NAME")"
+        sha256 -q "$1"
     fi
-
-    echo "$HASH"
 }
 
 # $1: sources.bk file
@@ -86,10 +81,7 @@ make_backup() {
     BACKUP_SH_CHECKSUM_FILE="$BACKUP_SH_OUTPATH/backup-$(uname -n)-$BACKUP_SH_DATE.sha256"
 
     # Check for root permissions
-    if [ "$(id -u)" -ne 0 ]; then
-        echo "Run this tool as root!"
-        exit 1
-    fi
+    [ "$(id -u)" -ne 0 ] && { echo "Run this tool as root!"; exit 1; }
 
     # Create temporary directory
     mkdir -p "$BACKUP_SH_OUTPUT"
@@ -99,16 +91,22 @@ make_backup() {
     BACKUP_SH_PROGRESS=1
 
     while IFS='=' read -r label path; do
+        # Check if entry path exists
+        [ -e "$path" ] || { echo "$path does not exist"; exit 1; }
+
         # Define a subdir for each backup entry
         BACKUP_SH_SUBDIR="$BACKUP_SH_OUTPUT/backup-$label-$BACKUP_SH_DATE"
         mkdir -p "$BACKUP_SH_SUBDIR"
 
         printf "Copying %s(%s/%s)\n" "$label" "$BACKUP_SH_PROGRESS" "$BACKUP_SH_TOTAL"
 
-        # Compute SHA256 of all files of the current directory
+        # Copy files
+        $BACKUP_SH_COMMAND "$path" "$BACKUP_SH_SUBDIR"
+
+        # Compute SHA256
         if [ "$BACKUP_SH_SHA256" -eq 1 ]; then
             shopt -s globstar dotglob
-            for file in "$path"/**/*; do
+            for file in "$BACKUP_SH_SUBDIR"/**/*; do
                 # Skip directories
                 [ -d "$file" ] && continue
                 gethash "$file" >> "$BACKUP_SH_CHECKSUM_FILE"
@@ -116,8 +114,6 @@ make_backup() {
             shopt -u globstar dotglob
         fi
 
-        # Copy files
-        $BACKUP_SH_COMMAND "$path" "$BACKUP_SH_SUBDIR"
         BACKUP_SH_PROGRESS=$((BACKUP_SH_PROGRESS+1))
     done < "$BACKUP_SH_SOURCES_PATH"
 
@@ -238,7 +234,7 @@ main() {
                 fi
                 
                 if [ "$CHECKSUM_FLAG" -eq 1 ]; then
-                    [ -e "$BACKUP_SH_SOURCES_PATH" ] || { echo "Sources file does not exist"; exit 1; }
+                    [ -f "$BACKUP_SH_SOURCES_PATH" ] || { echo "Sources file does not exist"; exit 1; }
                     make_backup "$BACKUP_SH_SOURCES_PATH" "$BACKUP_SH_OUTPATH" "$BACKUP_SH_PASSWORD" 1
                 else
                     make_backup "$BACKUP_SH_SOURCES_PATH" "$BACKUP_SH_OUTPATH" "$BACKUP_SH_PASSWORD" 0
@@ -271,8 +267,8 @@ main() {
                 fi
 
                 if [ "$CHECKSUM_FLAG" -eq 1 ]; then
-                    [ -e "$BACKUP_SH_SHA256_FILE" ] || { echo "Checksum file does not exist"; exit 1; }
-                    [ -e "$BACKUP_SH_ARCHIVE_FILE" ] || { echo "Backup file does not exist"; exit 1; }
+                    [ -f "$BACKUP_SH_SHA256_FILE" ] || { echo "Checksum file does not exist"; exit 1; }
+                    [ -f "$BACKUP_SH_ARCHIVE_FILE" ] || { echo "Backup file does not exist"; exit 1; }
                     extract_backup "$BACKUP_SH_ARCHIVE_FILE" "$BACKUP_SH_ARCHIVE_PW" "$BACKUP_SH_SHA256_FILE"
                 else
                     extract_backup "$BACKUP_SH_ARCHIVE_FILE" "$BACKUP_SH_ARCHIVE_PW"
