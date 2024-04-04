@@ -107,8 +107,8 @@ make_backup() {
         if [ "$BACKUP_SH_SHA256" -eq 1 ]; then
             shopt -s globstar dotglob
             for file in "$BACKUP_SH_SUBDIR"/**/*; do
-                # Skip directories
-                [ -d "$file" ] && continue
+                # Skip symbol links and directories
+                [ -d "$file" ] || [ -L "$file" ] && continue
                 gethash "$file" >> "$BACKUP_SH_CHECKSUM_FILE"
             done
             shopt -u globstar dotglob
@@ -173,8 +173,8 @@ extract_backup() {
     if [ -n "$BACKUP_SH_SHA256_FILE" ]; then
         shopt -s globstar dotglob
         for file in "backup.sh.tmp"/**/*; do
-            # Skip directories
-            [ -d "$file" ] && continue;
+            # Skip symbolic links and directories
+            [ -d "$file" ] || [ -L "$file" ] && continue;
             # Compute sha256 for current file
             SHA256="$(gethash "$file")"
             # Check if checksum file contains hash
