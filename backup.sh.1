@@ -14,7 +14,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "backup.sh" "1" "April 3, 2024" "Marco Cetica" "General Commands Manual"
+.TH "backup.sh" "1" "April 4, 2024" "Marco Cetica" "General Commands Manual"
 .hy
 .SH NAME
 .PP
@@ -166,7 +166,7 @@ You can also use \f[V]backup.sh\f[R] from a crontab rule:
 .nf
 \f[C]
 $> sudo crontab -e
-30 03 * * 6 EKEY=$(cat /home/john/.ekey) sh -c \[aq]/usr/local/bin/backup.sh -b /usr/local/etc/sources.bk /home/john $EKEY\[aq] > /dev/null 2>&1
+30 03 * * 6 EKEY=$(cat /home/john/.ekey) bash -c \[aq]/usr/local/bin/backup.sh -b /usr/local/etc/sources.bk /home/john $EKEY\[aq] > /dev/null 2>&1
 \f[R]
 .fi
 .PP
@@ -178,8 +178,8 @@ You can also adopt this practice while using the \f[V]--extract\f[R]
 option to avoid password leaking in shell history.
 .SS Backup extraction
 .PP
-\f[B]backup.sh\f[R] can also be used to extract the encrypted backup as
-well to verify the integrity of the backup data.
+\f[B]backup.sh\f[R] can also be used to extract and to verify the
+encrypted backup.
 To do so, use the following commands:
 .IP
 .nf
@@ -209,11 +209,11 @@ backup-ssh-<YYYYMMDD>
 \f[R]
 .fi
 .PP
-\f[B]note:\f[R]: be sure to rename any directory with that name to avoid
+\f[B]note\f[R]: be sure to rename any directory with that name to avoid
 collisions.
 .PP
-Instead, if you also want to verify the integrity of the backup data,
-use the following commands:
+If you also want to verify the integrity of the backup data, use the
+following commands:
 .IP
 .nf
 \f[C]
@@ -225,12 +225,9 @@ For instance:
 .IP
 .nf
 \f[C]
-$> ./backup.sh --checksum --extract backup-<hostname>-<YYYYMMDD>.tar.gz.enc badpw1234 $PWD/backup-<hostname>-<YYYYMMDD>.sha256
+$> ./backup.sh --checksum --extract backup-<hostname>-<YYYYMMDD>.tar.gz.enc badpw1234 backup-<hostname>-<YYYYMMDD>.sha256
 \f[R]
 .fi
-.PP
-\f[B]note:\f[R] be sure to provide the ABSOLUTE PATH of the checksum
-file.
 .SS How does backup.sh work?
 .PP
 \f[B]backup.sh\f[R] uses \f[I]rsync\f[R] to copy the files,
