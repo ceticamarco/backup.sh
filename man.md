@@ -3,7 +3,7 @@ title: backup.sh
 section: 1
 header: General Commands Manual
 footer: Marco Cetica
-date: April 3, 2024
+date: April 4, 2024
 ---
 
 # NAME
@@ -101,7 +101,7 @@ After that, you will find the backup archive and the checksum file in
 You can also use `backup.sh` from a crontab rule:
 ```
 $> sudo crontab -e
-30 03 * * 6 EKEY=$(cat /home/john/.ekey) sh -c '/usr/local/bin/backup.sh -b /usr/local/etc/sources.bk /home/john $EKEY' > /dev/null 2>&1
+30 03 * * 6 EKEY=$(cat /home/john/.ekey) bash -c '/usr/local/bin/backup.sh -b /usr/local/etc/sources.bk /home/john $EKEY' > /dev/null 2>&1
 
 ```
 
@@ -110,8 +110,8 @@ key is stored in a local file(with fixed permissions) to avoid password leaking 
 adopt this practice while using the `--extract` option to avoid password leaking in shell history.
 
 ## Backup extraction
-**backup.sh** can also be used to extract the encrypted backup as well to verify the integrity
-of the backup data. To do so, use the following commands:
+**backup.sh** can also be used to extract and to verify the encrypted backup.
+To do so, use the following commands:
 
 ```
 $> ./backup.sh --extract <ENCRYPTED_ARCHIVE> <ARCHIVE_PASSWORD>
@@ -131,10 +131,10 @@ backup-nginx-<YYYYMMDD>
 backup-ssh-<YYYYMMDD>
 ```
 
-**note:**: be sure to rename any directory with that name to avoid collisions.
+**note**: be sure to rename any directory with that name to avoid collisions.
 
 
-Instead, if you also want to verify the integrity of the backup data, use the following commands:
+If you also want to verify the integrity of the backup data, use the following commands:
 ```
 $> ./backup.sh --checksum --extract <ENCRYPTED_ARCHIVE> <ARCHIVE_PASSWORD> <CHECKSUM_ABSOLUTE_PATH>
 ```
@@ -142,10 +142,9 @@ $> ./backup.sh --checksum --extract <ENCRYPTED_ARCHIVE> <ARCHIVE_PASSWORD> <CHEC
 For instance:
 
 ```
-$> ./backup.sh --checksum --extract backup-<hostname>-<YYYYMMDD>.tar.gz.enc badpw1234 $PWD/backup-<hostname>-<YYYYMMDD>.sha256
+$> ./backup.sh --checksum --extract backup-<hostname>-<YYYYMMDD>.tar.gz.enc badpw1234 backup-<hostname>-<YYYYMMDD>.sha256
 ```
 
-**note:** be sure to provide the ABSOLUTE PATH of the checksum file.
 
 ## How does backup.sh work?
 **backup.sh** uses _rsync_ to copy the files, _tar_ to compress the backup, _gpg_ to encrypt it and

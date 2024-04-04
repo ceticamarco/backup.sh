@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/usr/bin/env bash
 # backup.sh is a POSIX compliant, modular and lightweight
 # backup utility to save and encrypt your files.
 #
@@ -34,6 +34,8 @@
 # Copyright (c) 2018,2023,2024 Marco Cetica <email@marcocetica.com>
 #
 
+set -e
+
 checkdeps() {
     # Check if dependencies are installed
     missing_dep=0
@@ -49,6 +51,20 @@ checkdeps() {
     if [ $missing_dep -ne 0 ]; then
         exit 1
     fi
+}
+
+# $1: filename
+gethash() {
+    FILE_NAME="$1"
+    OS="$(uname)"
+
+    if [ "$OS" = "Linux" ]; then
+        HASH="$(sha256sum "$FILE_NAME" | awk '{print $1}')"
+    else
+        HASH="$(sha256 -q "$FILE_NAME")"
+    fi
+
+    echo "$HASH"
 }
 
 # $1: sources.bk file
@@ -75,12 +91,6 @@ make_backup() {
         exit 1
     fi
 
-    # Check whether the sources file exists or not
-    if [ ! -f "$BACKUP_SH_SOURCES_PATH" ]; then
-        echo "$BACKUP_SH_SOURCES_PATH does not exist."
-        exit 1
-    fi
-
     # Create temporary directory
     mkdir -p "$BACKUP_SH_OUTPUT"
 
@@ -97,7 +107,13 @@ make_backup() {
 
         # Compute SHA256 of all files of the current directory
         if [ "$BACKUP_SH_SHA256" -eq 1 ]; then
-            find "$path" -type f -exec sha256sum {} + | sort -k 2 | awk '{print $1}' >> "$BACKUP_SH_CHECKSUM_FILE"
+            shopt -s globstar dotglob
+            for file in "$path"/**/*; do
+                # Skip directories
+                [ -d "$file" ] && continue
+                gethash "$file" >> "$BACKUP_SH_CHECKSUM_FILE"
+            done
+            shopt -u globstar dotglob
         fi
 
         # Copy files
@@ -150,7 +166,7 @@ extract_backup() {
         --decrypt \
         --no-symkey-cache \
         --pinentry-mode=loopback \
-        --batch --passphrase "$BACKUP_SH_ARCHIVE_PW" \
+        --batch --passphrase-fd 3 3<<< "$BACKUP_SH_ARCHIVE_PW" \
         --output backup.sh.tar.gz \
         "$BACKUP_SH_ARCHIVE_PATH"
 
@@ -159,16 +175,20 @@ extract_backup() {
 
     # If specified, use SHA256 file to compute checksum of files
     if [ -n "$BACKUP_SH_SHA256_FILE" ]; then
-        for file in $(find "backup.sh.tmp" -type f | sort -k 2); do
+        shopt -s globstar dotglob
+        for file in "backup.sh.tmp"/**/*; do
+            # Skip directories
+            [ -d "$file" ] && continue;
             # Compute sha256 for current file
-            sha256="$(sha256sum "$file" | awk '{print $1}')"
+            SHA256="$(gethash "$file")"
             # Check if checksum file contains hash
-            if ! grep -wq "$sha256" "$BACKUP_SH_SHA256_FILE"; then
+            if ! grep -wq "$SHA256" "$BACKUP_SH_SHA256_FILE"; then
                 printf "[FATAL] - integrity error for '%s'.\n" "$file"
                 rm -rf backup.sh.tar.gz backup.sh.tmp
                 exit 1
             fi
         done
+        shopt -u globstar dotglob
     fi
 
     rm -rf backup.sh.tar.gz
@@ -218,6 +238,7 @@ main() {
                 fi
                 
                 if [ "$CHECKSUM_FLAG" -eq 1 ]; then
+                    [ -e "$BACKUP_SH_SOURCES_PATH" ] || { echo "Sources file does not exist"; exit 1; }
                     make_backup "$BACKUP_SH_SOURCES_PATH" "$BACKUP_SH_OUTPATH" "$BACKUP_SH_PASSWORD" 1
                 else
                     make_backup "$BACKUP_SH_SOURCES_PATH" "$BACKUP_SH_OUTPATH" "$BACKUP_SH_PASSWORD" 0
@@ -231,18 +252,18 @@ main() {
                 shift 1
                 ;;
             -e|--extract)
-                BACKUP_SH_ARCHIVE_PATH="$2"
+                BACKUP_SH_ARCHIVE_FILE="$2"
                 BACKUP_SH_ARCHIVE_PW="$3"
                 BACKUP_SH_SHA256_FILE="$4"
 
                 if [ "$CHECKSUM_FLAG" -eq 1 ]; then
-                    if [ -z "$BACKUP_SH_ARCHIVE_PATH" ] || [ -z "$BACKUP_SH_ARCHIVE_PW" ] || [ -z "$BACKUP_SH_SHA256_FILE" ]; then
+                    if [ -z "$BACKUP_SH_ARCHIVE_FILE" ] || [ -z "$BACKUP_SH_ARCHIVE_PW" ] || [ -z "$BACKUP_SH_SHA256_FILE" ]; then
                         echo "Please, specify an encrypted archive, a password and a SHA256 file."
                         echo "For more informatio, try --help"
                         exit 1
                     fi
                 else
-                    if [ -z "$BACKUP_SH_ARCHIVE_PATH" ] || [ -z "$BACKUP_SH_ARCHIVE_PW" ]; then
+                    if [ -z "$BACKUP_SH_ARCHIVE_FILE" ] || [ -z "$BACKUP_SH_ARCHIVE_PW" ]; then
                         echo "Please, specify an encrypted archive and a password."
                         echo "For more informatio, try --help"
                         exit 1
@@ -251,9 +272,10 @@ main() {
 
                 if [ "$CHECKSUM_FLAG" -eq 1 ]; then
                     [ -e "$BACKUP_SH_SHA256_FILE" ] || { echo "Checksum file does not exist"; exit 1; }
-                    extract_backup "$BACKUP_SH_ARCHIVE_PATH" "$BACKUP_SH_ARCHIVE_PW" "$BACKUP_SH_SHA256_FILE"
+                    [ -e "$BACKUP_SH_ARCHIVE_FILE" ] || { echo "Backup file does not exist"; exit 1; }
+                    extract_backup "$BACKUP_SH_ARCHIVE_FILE" "$BACKUP_SH_ARCHIVE_PW" "$BACKUP_SH_SHA256_FILE"
                 else
-                    extract_backup "$BACKUP_SH_ARCHIVE_PATH" "$BACKUP_SH_ARCHIVE_PW"
+                    extract_backup "$BACKUP_SH_ARCHIVE_FILE" "$BACKUP_SH_ARCHIVE_PW"
                 fi
 
                 exit 0
