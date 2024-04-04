@@ -133,7 +133,7 @@ make_backup() {
         --cipher-algo=AES256 \
         --no-symkey-cache \
         --pinentry-mode=loopback \
-        --batch --passphrase "$BACKUP_SH_PASS" \
+        --batch --passphrase-fd 3 3<<< "$BACKUP_SH_PASS" \
         --output "$BACKUP_SH_FILENAME" \
         "$BACKUP_SH_OUTPATH/backup.sh.tar.gz" > /dev/null 2>&1
 
