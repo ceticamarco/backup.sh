@@ -3,20 +3,24 @@ title: backup.sh
 section: 1
 header: General Commands Manual
 footer: Marco Cetica
-date: April 4, 2024
+date: October 21, 2024
 ---
 
 # NAME
-**backup.sh** - POSIX compliant, modular and lightweight backup utility to save and encrypt your files.
+**backup.sh** - POSIX compliant, modular and lightweight backup utility.
 
 # SYNOPSIS
 ```
-Syntax: ./backup.sh [-b|-c|-e|-h]
+Syntax: ./backup.sh [-b|-e|-c|-V|-h]
 options:
 -b|--backup   SOURCES DEST PASS  Backup folders from SOURCES file.
--c|--checksum                    Generate/check SHA256 of a backup.
 -e|--extract  ARCHIVE PASS       Extract ARCHIVE using PASS.
+-c|--checksum                    Generate/check SHA256 of a backup.
+-V|--verbose                     Enable verbose mode.
 -h|--help                        Show this helper.
+
+General help with the software: https://github.com/ceticamarco/backup.sh
+Report bugs to: Marco Cetica(<email@marcocetica.com>)
 ```
 
 # DESCRIPTION
@@ -108,6 +112,8 @@ $> sudo crontab -e
 This will automatically run `backup.sh` every Saturday morning at 03:30 AM. In the example above, the encryption
 key is stored in a local file(with fixed permissions) to avoid password leaking in crontab logs. You can also
 adopt this practice while using the `--extract` option to avoid password leaking in shell history.
+
+By default `backup.sh` is very quiet, to add some verbosity to the output, be sure to use the `-V`(`--verbose`) option.
 
 ## Backup extraction
 **backup.sh** can also be used to extract and to verify the encrypted backup.
@@ -216,9 +222,10 @@ The first thing to do is to define the source paths inside a _sources file_:
 
 ```
 $> cat sources.bk
-ssh=/etc/ssh
-web_root=/var/www
-logs=/var/log
+ssh=/etc/ssh/
+web_root=/var/www/
+singleFile=/home/john/file.txt
+logs=/var/log/
 ```
 
 After that we can load our encryption key from the specified file inside an environment variable:
@@ -252,8 +259,8 @@ $> backup.sh --extract backup-af9a8e6bfe15-20180425.tar.gz.enc "$(cat /home/john
 ```
 
 # AUTHORS
-**backup.sh** was written by Marco Cetica on late 2018.
+**backup.sh** is being developed by Marco Cetica since late 2018.
 
 # BUGS
-Submit bug reports online at: <email@marcocetica.com> or open an issue 
+Submit bug reports at: <email@marcocetica.com> or open an issue 
 on the issue tracker of the GitHub page of this project: https://github.com/ice-bit/backup.sh

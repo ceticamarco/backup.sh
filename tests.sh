@@ -51,13 +51,13 @@ create_files() {
 }
 
 execute_backup() {
-    ./backup.sh -c -b sources.bk "$PWD" badpw
+    ./backup.sh -V -c -b sources.bk "$PWD" badpw
 }
 
 extract_backup() {
     host="$(uname -n)"
     date="$(date +'%Y%m%d')"
-    ./backup.sh -c -e "$PWD"/backup-"$host"-"$date".tar.gz.enc badpw "$PWD"/backup-"$host"-"$date".sha256
+    ./backup.sh -V -c -e "$PWD"/backup-"$host"-"$date".tar.gz.enc badpw "$PWD"/backup-"$host"-"$date".sha256
 }
 
 test_backup() {
