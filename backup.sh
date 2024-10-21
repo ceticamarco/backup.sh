@@ -37,6 +37,11 @@
 set -e
 
 checkdeps() {
+    if [ "${BASH_VERSINFO[0]}" -lt 4 ]; then
+        echo "This version of Bash is not supported."
+        exit 1
+    fi
+
     # Check if dependencies are installed
     missing_dep=0
     deps="rsync tar gpg"
@@ -66,13 +71,20 @@ gethash() {
 # $2: output path
 # $3: password
 # $4: compute sha256(0,1)
+# $5: verbosity flag(0,1)
 make_backup() {
     BACKUP_SH_SOURCES_PATH="$1"
     BACKUP_SH_OUTPATH="$2"
     BACKUP_SH_PASS="$3"
     BACKUP_SH_SHA256="$4"
+    BACKUP_SH_VERBOSE="$5"
 
-    BACKUP_SH_COMMAND="rsync -aPhrq --delete"
+    if [ "$BACKUP_SH_VERBOSE" -eq 1 ]; then
+        BACKUP_SH_COMMAND="rsync -aPhr --delete"
+    else
+        BACKUP_SH_COMMAND="rsync -aPhrq --delete"
+    fi
+
     BACKUP_SH_DATE="$(date +'%Y%m%d')"
     BACKUP_SH_FOLDER="backup.sh.tmp"
     BACKUP_SH_OUTPUT="$BACKUP_SH_OUTPATH/$BACKUP_SH_FOLDER"
@@ -119,8 +131,13 @@ make_backup() {
 
     # Compress backup directory
     echo "Compressing backup..."
-    tar -czf "$BACKUP_SH_OUTPATH/backup.sh.tar.gz" \
-        -C "$BACKUP_SH_OUTPATH" "$BACKUP_SH_FOLDER" > /dev/null 2>&1
+    if [ "$BACKUP_SH_VERBOSE" -eq 1 ]; then
+        tar -cvzf "$BACKUP_SH_OUTPATH/backup.sh.tar.gz" \
+            -C "$BACKUP_SH_OUTPATH" "$BACKUP_SH_FOLDER"
+    else
+        tar -czf "$BACKUP_SH_OUTPATH/backup.sh.tar.gz" \
+            -C "$BACKUP_SH_OUTPATH" "$BACKUP_SH_FOLDER" > /dev/null 2>&1
+    fi
 
     # Encrypt backup directory
     echo "Encrypting backup..."
@@ -151,10 +168,12 @@ make_backup() {
 # $1: archive file
 # $2: archive password
 # $3: sha256 file(optional)
+# $4: verbosity flag(0,1)
 extract_backup() {
     BACKUP_SH_ARCHIVE_PATH="$1"
     BACKUP_SH_ARCHIVE_PW="$2"
     BACKUP_SH_SHA256_FILE="$3"
+    BACKUP_SH_VERBOSE="$4"
 
     # Decrypt the archive
     gpg -a \
@@ -167,7 +186,11 @@ extract_backup() {
         "$BACKUP_SH_ARCHIVE_PATH"
 
     # Extract archive
-    tar -xzf backup.sh.tar.gz 1> /dev/null 2>&1
+    if [ "$BACKUP_SH_VERBOSE" -eq 1 ]; then
+        tar -xzvf backup.sh.tar.gz
+    else
+        tar -xzf backup.sh.tar.gz > /dev/null 2>&1
+    fi
 
     # If specified, use SHA256 file to compute checksum of files
     if [ -n "$BACKUP_SH_SHA256_FILE" ]; then
@@ -179,10 +202,11 @@ extract_backup() {
             SHA256="$(gethash "$file")"
             # Check if checksum file contains hash
             if ! grep -wq "$SHA256" "$BACKUP_SH_SHA256_FILE"; then
-                printf "[FATAL] - integrity error for '%s'.\n" "$file"
                 rm -rf backup.sh.tar.gz backup.sh.tmp
+                printf "[FATAL] - integrity error for '%s'.\n" "$file"
                 exit 1
             fi
+            printf "[OK] - integrity check for '%s' passed.\n" "$file"
         done
         shopt -u globstar dotglob
     fi
@@ -194,13 +218,14 @@ helper() {
     CLI_NAME="$1"
 
     cat <<EOF
-backup.sh - POSIX compliant, modular and lightweight backup utility.
+backup.sh v1.0.0 - POSIX compliant, modular and lightweight backup utility.
 
-Syntax: $CLI_NAME [-b|-c|-e|-h]
+Syntax: $CLI_NAME [-b|-e|-c|-V|-h]
 options:
 -b|--backup   SOURCES DEST PASS  Backup folders from SOURCES file.
--c|--checksum                    Generate/check SHA256 of a backup.
 -e|--extract  ARCHIVE PASS       Extract ARCHIVE using PASS.
+-c|--checksum                    Generate/check SHA256 of a backup.
+-V|--verbose                     Enable verbose mode.
 -h|--help                        Show this helper.
 
 General help with the software: https://github.com/ceticamarco/backup.sh
@@ -219,6 +244,7 @@ main() {
     fi
 
     CHECKSUM_FLAG=0
+    VERBOSE_FLAG=0
     # Parse CLI arguments
     while [ $# -gt 0 ]; do
         case $1 in
@@ -233,19 +259,10 @@ main() {
                     exit 1
                 fi
                 
-                if [ "$CHECKSUM_FLAG" -eq 1 ]; then
-                    [ -f "$BACKUP_SH_SOURCES_PATH" ] || { echo "Sources file does not exist"; exit 1; }
-                    make_backup "$BACKUP_SH_SOURCES_PATH" "$BACKUP_SH_OUTPATH" "$BACKUP_SH_PASSWORD" 1
-                else
-                    make_backup "$BACKUP_SH_SOURCES_PATH" "$BACKUP_SH_OUTPATH" "$BACKUP_SH_PASSWORD" 0
-                fi
+                [ -f "$BACKUP_SH_SOURCES_PATH" ] || { echo "Sources file does not exist"; exit 1; }
+                make_backup "$BACKUP_SH_SOURCES_PATH" "$BACKUP_SH_OUTPATH" "$BACKUP_SH_PASSWORD" "$CHECKSUM_FLAG" "$VERBOSE_FLAG"
 
                 exit 0
-                ;;
-            -c|--checksum)
-                [ $# -eq 1 ] && { echo "Use this option with '--backup' or '--extract'"; exit 1; }
-                CHECKSUM_FLAG=1
-                shift 1
                 ;;
             -e|--extract)
                 BACKUP_SH_ARCHIVE_FILE="$2"
@@ -261,20 +278,32 @@ main() {
                 else
                     if [ -z "$BACKUP_SH_ARCHIVE_FILE" ] || [ -z "$BACKUP_SH_ARCHIVE_PW" ]; then
                         echo "Please, specify an encrypted archive and a password."
-                        echo "For more informatio, try --help"
+                        echo "For more information, try --help"
                         exit 1
                     fi
                 fi
 
+                # Check whether backup file exists or not
+                [ -f "$BACKUP_SH_ARCHIVE_FILE" ] || { echo "Backup file does not exist"; exit 1; }
+
                 if [ "$CHECKSUM_FLAG" -eq 1 ]; then
                     [ -f "$BACKUP_SH_SHA256_FILE" ] || { echo "Checksum file does not exist"; exit 1; }
-                    [ -f "$BACKUP_SH_ARCHIVE_FILE" ] || { echo "Backup file does not exist"; exit 1; }
-                    extract_backup "$BACKUP_SH_ARCHIVE_FILE" "$BACKUP_SH_ARCHIVE_PW" "$BACKUP_SH_SHA256_FILE"
+                    extract_backup "$BACKUP_SH_ARCHIVE_FILE" "$BACKUP_SH_ARCHIVE_PW" "$BACKUP_SH_SHA256_FILE"  "$VERBOSE_FLAG"
                 else
-                    extract_backup "$BACKUP_SH_ARCHIVE_FILE" "$BACKUP_SH_ARCHIVE_PW"
+                    extract_backup "$BACKUP_SH_ARCHIVE_FILE" "$BACKUP_SH_ARCHIVE_PW" "" "$VERBOSE_FLAG"
                 fi
 
                 exit 0
+                ;;
+            -c|--checksum)
+                [ $# -eq 1 ] && { echo "Use '--checksum' with '--backup' or '--extract'"; exit 1; }
+                CHECKSUM_FLAG=1
+                shift 1
+                ;;
+            -V|--verbose)
+                [ $# -eq 1 ] && { echo "Use '--verbose' with '--backup' or '--extract'"; exit 1; }
+                VERBOSE_FLAG=1
+                shift 1
                 ;;
             -h|--help)
                 helper "$0"

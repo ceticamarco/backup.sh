@@ -6,17 +6,22 @@ workstations. `backup.sh` uses [rsync](https://linux.die.net/man/1/rsync), [tar]
 to copy, compress, encrypt the backup and verify the backup.  
 
 ## Installation
-`backup.sh` consists in a single source file, to install it you can copy the script wherever you want.
-Alternatively, you can install the script, the default sources file and the man file using the following command:
+`backup.sh` is a single source file, to install it you can copy the script wherever you want. Alternatively, if you 
+are running a DEB/RPM distribution, you can install it with the following command:
+```sh 
+$> sudo apt install ./bin/backup.sh-1.0.0.x86_64.deb # Debian
+$> sudo dnf install ./bin/backup.sh-1.0.0-2.x86_64.rpm # RHEL
+```
+
+For any other UNIX system, you can use the following command:
 ```sh
 $> sudo make install
 ```
 This will copy `backup.sh` into `/usr/local/bin/backup.sh`, `sources.bk` into `/usr/local/etc/sources.bk` and
-`backup.sh.1` into `/usr/share/man/man1/backup.sh.1`. To uninstall the program along with the sample _sources file_ and the manual page,
-you can issue `sudo make uninstall`.
+`backup.sh.1` into `/usr/share/man/man1/backup.sh.1`. To uninstall the program along with the sample _sources file_ and the manual page, you can issue `sudo make uninstall`.
 
 At this point you still need to install the following dependencies:
-- `Bash`
+- `Bash(v>=4)`
 - `rsync`
 - `tar`
 - `gpg`
@@ -24,13 +29,14 @@ At this point you still need to install the following dependencies:
 ## Usage
 To show the available options, you can run `backup.sh --help`, which will print out the following message:
 ```text
-backup.sh - POSIX compliant, modular and lightweight backup utility.
+backup.sh v1.0.0 - POSIX compliant, modular and lightweight backup utility.
 
-Syntax: ./backup.sh [-b|-c|-e|-h]
+Syntax: ./backup.sh [-b|-e|-c|-V|-h]
 options:
 -b|--backup   SOURCES DEST PASS  Backup folders from SOURCES file.
--c|--checksum                    Generate/check SHA256 of a backup.
 -e|--extract  ARCHIVE PASS       Extract ARCHIVE using PASS.
+-c|--checksum                    Generate/check SHA256 of a backup.
+-V|--verbose                     Enable verbose mode.
 -h|--help                        Show this helper.
 
 General help with the software: https://github.com/ceticamarco/backup.sh
@@ -120,6 +126,8 @@ $> sudo crontab -e
 This will automatically run `backup.sh` every Saturday morning at 03:30 AM. In the example above, the encryption
 key is stored in a local file(with fixed permissions) to avoid password leaking in crontab logs. You can also
 adopt this practice while using the `--extract` option to avoid password leaking in shell history.
+
+By default `backup.sh` is very quiet, to add some verbosity to the output, be sure to use the `-V`(`--verbose`) option.
 
 ### Backup extraction
 `backup.sh` can also be used to extract and to verify the encrypted backup.   
