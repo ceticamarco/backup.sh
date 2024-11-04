@@ -119,8 +119,12 @@ make_backup() {
         if [ "$BACKUP_SH_SHA256" -eq 1 ]; then
             shopt -s globstar dotglob
             for file in "$BACKUP_SH_SUBDIR"/**/*; do
-                # Skip symbol links and directories
+                # Skip symbolic links and directories
                 [ -d "$file" ] || [ -L "$file" ] && continue
+
+                if [ "$BACKUP_SH_VERBOSE" -eq 1 ]; then
+                    printf "Computing checksum for '%s'...\n" "$file"
+                fi
                 gethash "$file" >> "$BACKUP_SH_CHECKSUM_FILE"
             done
             shopt -u globstar dotglob
@@ -176,6 +180,7 @@ extract_backup() {
     BACKUP_SH_VERBOSE="$4"
 
     # Decrypt the archive
+    echo "Decrypting backup..."
     gpg -a \
         --quiet \
         --decrypt \
@@ -206,7 +211,9 @@ extract_backup() {
                 printf "[FATAL] - integrity error for '%s'.\n" "$file"
                 exit 1
             fi
-            printf "[OK] - integrity check for '%s' passed.\n" "$file"
+            if [ "$BACKUP_SH_VERBOSE" -eq 1 ]; then
+                printf "[OK] - integrity check for '%s' passed.\n" "$file"
+            fi
         done
         shopt -u globstar dotglob
     fi
